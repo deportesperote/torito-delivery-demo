@@ -26,7 +26,7 @@ var SHIP={
   lenta:{t:'Entrega en 6 horas',d:'Tarifa estándar',fee:19,zona:'ESTANDAR',entrega:'DOMICILIO',tiempo:'6H'},
   tienda:{t:'Recoger en tienda',d:'Sin costo de envío',fee:0,zona:'',entrega:'TIENDA',tiempo:''}
 };
-var GRATIS=29900;
+var GRATIS=29900,MINIMO=10000;
 var PAGO={enlinea:{t:'Pagar en línea (tarjeta, OXXO o SPEI)',code:'EN_LINEA',metodo:'mercadopago'},efectivo:{t:'Efectivo al entregar',code:'EFECTIVO',metodo:'efectivo'}};
 var H_OPEN=420,H_CLOSE=1320,MSG_MAX=2000;
 var Q=new URLSearchParams(location.search);
@@ -127,7 +127,9 @@ function render(){
 }
 function go(o){if(o.q!=null||o.dep!=null||o.onlyExp!=null)S.lim=24;Object.assign(S,o);render();window.scrollTo(0,0)}
 function faltaTxt(){var f=GRATIS-subCents();if(f<=0)return '';return 'Te faltan '+F(f/100)+' para envío gratis'}
-function barNudge(){if(ZONA==='fuera'||!count())return '';if(subCents()>=GRATIS)return 'Envío GRATIS';return faltaTxt()}
+function underMin(){return subCents()<MINIMO}
+function minTxt(){var f=MINIMO-subCents();if(f<=0)return '';return 'Compra mínima $100 — te faltan '+F(f/100)}
+function barNudge(){if(!count())return '';if(underMin())return minTxt();if(ZONA==='fuera')return '';if(subCents()>=GRATIS)return 'Envío GRATIS';return faltaTxt()}
 function bar(){
   var n=count(),b=$('#cbar');if(!b)return;b.hidden=!n;document.body.classList.toggle('hasbar',!!n);
   if(!n){b.innerHTML='';b.classList.remove('tall');document.body.classList.remove('tallbar');return}
@@ -188,7 +190,8 @@ function checkout(){
   if(NAME_LOCK)h+='<p class="who">Pedido de <b>'+E(cli.nombre)+'</b></p>';
   if(ZONA==='fuera')h+='<div class="zone"><b>Fuera de cobertura</b>No hay entrega a domicilio. El pedido queda para recoger en tienda.</div>';
   h+='<section class="box"><h3>'+count()+' '+(count()===1?'artículo':'artículos')+'</h3>'+it.map(function(c){var i=BY[c.id],ix=cart.indexOf(c);return '<div class="li">'+pic(i)+'<div class="lt"><b>'+E(i.n)+'</b>'+(c.talla?'<small>Talla '+E(c.talla)+(c.nota?' · '+E(c.nota):'')+'</small>':'')+(i.x?'<i class="b18 s">+18</i>':'')+'</div><div class="lr"><b>'+F(cents(i.p)*c.qty/100)+'</b><div class="step sm"><button type="button" data-m="'+ix+'" aria-label="Quitar uno">−</button><b>'+c.qty+'</b><button type="button" data-p="'+ix+'" aria-label="Agregar uno">+</button></div></div></div>'}).join('')+'</section>';
-  h+='<section class="box"><h3>Entrega</h3><div class="ships">'+shipKeys().map(function(x){var dis=blocked(x);return '<button type="button" class="ship'+(k===x?' on':'')+'" data-ship="'+x+'"'+(dis?' disabled':'')+' aria-pressed="'+(k===x?'true':'false')+'"><span class="tx"><b>'+SHIP[x].t+'</b><small>'+SHIP[x].d+'</small></span><span class="fee'+(feeTxt(x)==='GRATIS'?' free':'')+'">'+feeTxt(x)+'</span></button>'}).join('')+'</div>'+shipHint()+(k!=='tienda'&&!free&&subCents()>0?'<p class="shipnudge">'+faltaTxt()+'</p>':'')+(e.afterHours?'<p class="warn">Estamos cerrados. Tu pedido se prepara a partir de las 7:00 h.</p>':(k==='tienda'?'<p class="nt">Lo recogen en la tienda, de 7:00 a 22:00 h.</p>':'<p class="nt">Llega aprox. '+e.txt+'. Horario de 7:00 a 22:00 h.</p>'))+'</section>';
+  var low=underMin();
+  h+='<section class="box"><h3>Entrega</h3><div class="ships">'+shipKeys().map(function(x){var dis=blocked(x);return '<button type="button" class="ship'+(k===x?' on':'')+'" data-ship="'+x+'"'+(dis?' disabled':'')+' aria-pressed="'+(k===x?'true':'false')+'"><span class="tx"><b>'+SHIP[x].t+'</b><small>'+SHIP[x].d+'</small></span><span class="fee'+(feeTxt(x)==='GRATIS'?' free':'')+'">'+feeTxt(x)+'</span></button>'}).join('')+'</div>'+shipHint()+(k!=='tienda'&&!free&&!low&&subCents()>0?'<p class="shipnudge">'+faltaTxt()+'</p>':'')+(e.afterHours?'<p class="warn">Estamos cerrados. Tu pedido se prepara a partir de las 7:00 h.</p>':(k==='tienda'?'<p class="nt">Lo recogen en la tienda, de 7:00 a 22:00 h.</p>':'<p class="nt">Llega aprox. '+e.txt+'. Horario de 7:00 a 22:00 h.</p>'))+'</section>';
   h+='<section class="box"><h3>Pago</h3><div class="pays">'+Object.keys(PAGO).map(function(x){return '<button type="button" class="pay'+(cli.pago===x?' on':'')+'" data-pago="'+x+'" aria-pressed="'+(cli.pago===x?'true':'false')+'">'+PAGO[x].t+'</button>'}).join('')+'</div></section>';
   if(!NAME_LOCK||!TEL_LOCK){
     h+='<section class="box"><h3>Tus datos</h3>';
@@ -199,7 +202,7 @@ function checkout(){
   h+='<section class="box"><label class="lb" for="nota">Nota (opcional)</label><textarea id="nota" class="note" data-f="note" maxlength="240" placeholder="Referencia, color de portón o indicación para la entrega">'+E(cli.note)+'</textarea></section>';
   if(adult())h+='<section class="box age"><h3>Solo mayores de 18</h3><p>Este pedido incluye bebidas alcohólicas o cigarros. Pediremos identificación al entregar.</p><label class="ck"><input type="checkbox" id="edad"'+(edad?' checked':'')+'> Confirmo que soy mayor de edad</label></section>';
   h+='</div>';
-  h+='<div class="cof"><div class="tot"><div><span>Subtotal</span><b>'+F(sub)+'</b></div><div'+(free?' class="free"':'')+'><span>'+(free?'Envío GRATIS':'Envío')+'</span><b>'+(free?'':feeTxt(k))+'</b></div><div class="gt"><span>Total</span><b>'+F(tot)+'</b></div></div>'+(L().some(function(c){return BY[c.id].iva})?'<p class="nt">Algunos artículos de calzado se cobran + IVA.</p>':'')+'<p class="err" id="err" role="alert"></p><p class="sent" id="sent"></p><button type="button" class="big" id="send">Enviar pedido por WhatsApp · '+F(tot)+'</button>'+(cli.pago==='enlinea'?'<p class="payhint">Te mandaremos el botón de pago en WhatsApp</p>':'')+'</div></div>';
+  h+='<div class="cof"><div class="tot"><div><span>Subtotal</span><b>'+F(sub)+'</b></div><div'+(free?' class="free"':'')+'><span>'+(free?'Envío GRATIS':'Envío')+'</span><b>'+(free?'':feeTxt(k))+'</b></div><div class="gt"><span>Total</span><b>'+F(tot)+'</b></div></div>'+(L().some(function(c){return BY[c.id].iva})?'<p class="nt">Algunos artículos de calzado se cobran + IVA.</p>':'')+(low?'<p class="minban">'+minTxt()+'</p>':'')+'<p class="err" id="err" role="alert"></p><p class="sent" id="sent"></p><button type="button" class="big" id="send"'+(low?' disabled':'')+'>Enviar pedido por WhatsApp · '+F(tot)+'</button>'+(cli.pago==='enlinea'&&!low?'<p class="payhint">Te mandaremos el botón de pago en WhatsApp</p>':'')+'</div></div>';
   ov(h,onCheckout);
   [].forEach.call(document.querySelectorAll('#ov .li'),function(row,ix){var c=it[ix];if(c)fillImg(row,BY[c.id],ix<2)});
   var cob=$('#ov .cob');if(cob)cob.scrollTop=y;
@@ -208,6 +211,7 @@ function validate(){
   cli.ship=resolveShip(cli.ship);
   var name=san(cli.nombre,80);
   if(!L().length)return 'Agrega un producto para continuar.';
+  if(underMin())return minTxt();
   if(name.length<2)return 'Escribe tu nombre.';
   if(!telOk())return 'Escribe un celular de 10 dígitos.';
   if(adult()&&!edad)return 'Confirma que eres mayor de edad.';
@@ -326,7 +330,7 @@ var retry=$('#bootRetry');if(retry)retry.onclick=function(){retry.hidden=true;va
 index();
 window.RP={
   ready:false,add:add,checkout:checkout,folio:folio,buildMsg:buildMsg,makeOrder:makeOrder,openWa:openWa,
-  quote:function(){var k=resolveShip(cli.ship);return {ship:k,sub:subCents()/100,envio:feeOf(k),total:grandCents(k)/100,zona:zonaLine(k),entrega:k==='tienda'?'TIENDA':'DOMICILIO',tiempo:tiempoOf(k),gratis:k!=='tienda'&&subCents()>=GRATIS}},
+  quote:function(){var k=resolveShip(cli.ship);return {ship:k,sub:subCents()/100,envio:feeOf(k),total:grandCents(k)/100,zona:zonaLine(k),entrega:k==='tienda'?'TIENDA':'DOMICILIO',tiempo:tiempoOf(k),gratis:k!=='tienda'&&subCents()>=GRATIS,bajoMinimo:underMin()}},
   zone:function(){return ZONA},telLocked:function(){return TEL_LOCK},blocked:blocked,client:function(){return cli}
 };
 window.PD_BASE=BASE;window.PD_FUERA=ZONA==='fuera';
