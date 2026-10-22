@@ -19,7 +19,7 @@ function render(i,d){var sp=i.dep==='Deportes';var sub=i.sub||i.cat||'';
 function show(id,push){var i=C.BY()[id];if(!i)return;open=id;q=1;render(i,{});el.hidden=false;document.body.style.overflow='hidden';
  if(push!==false)history.pushState({pdx:id},'','#p='+encodeURIComponent(i.k||i.id));
  loadDesc(i.dep,function(j){if(open===id)render(i,j[dkey(i)]||{d:''})})}
-function hide(){open=null;el.hidden=true;document.body.style.overflow=''}
+function hide(){open=null;el.hidden=true;var ov=document.getElementById('ov');if(ov&&!ov.hidden)return;document.body.style.overflow=''}
 function close(){if(history.state&&history.state.pdx)history.back();else{hide();if(location.hash.indexOf('#p=')===0)history.replaceState(null,'',location.pathname+location.search)}}
 el.addEventListener('click',function(e){if(e.target===el)return close();var b=e.target.closest('[data-pdx]');if(!b)return;var a=b.dataset.pdx,i=C.BY()[open];
  if(a==='close')return close();if(a==='+1'||a==='-1'){q=Math.max(1,q+(+a));document.getElementById('pdxQ').textContent=q;var g=el.querySelector('.pdx-go:not([disabled])');if(g)g.textContent='Agregar · '+F(i.p*q);return}
