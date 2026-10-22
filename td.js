@@ -19,7 +19,7 @@ var HNOTE='Tiempos de entrega válidos en pedidos dentro del horario de 7:00 a 2
 // ---- catálogo unificado ----
 var ALL=[],BY={},DEP={};
 (window.PRODUCTS||[]).forEach(function(p){var n=parseInt(p.id.replace(/\D/g,''),10)||0;var it={id:'d'+p.id,n:p.n,p:p.p,iva:!!p.iva,img:p.img,dep:'Deportes',cat:p.c,sub:p.s,k:p.k[0]||'',t:p.t,a:true,x:false,exp:n%2===1};it._q=N(p.n+' '+p.c+' '+p.s+' '+p.k.join(' ')+' deportes');ALL.push(it)});
-function addT(T){T.forEach(function(p){var it={id:'t'+p.id,n:p.t,p:p.p,iva:false,img:'',dep:p.c,cat:p.c,sub:p.s,k:'',t:[],a:p.a,x:p.x,exp:true};it._q=N(p.t+' '+p.c+' '+p.s);ALL.push(it)})}
+function addT(T){T.forEach(function(p){var it={id:'t'+p.id,n:p.t,p:p.p,iva:false,img:p.i||'',dep:p.c,cat:p.c,sub:p.s,k:'',t:[],a:p.a,x:p.x,exp:true};it._q=N(p.t+' '+p.c+' '+p.s);ALL.push(it)})}
 function index(){BY={};DEP={};ALL.forEach(function(i){BY[i.id]=i;DEP[i.dep]=(DEP[i.dep]||0)+1})}
 // ---- estado ----
 var S={view:'home',dep:'',cat:'',q:'',lim:60},cart=[],cli={nombre:'',tel:'',ent:'',modo:'envio',dir:'',ref:'',pago:'efectivo',edad:false},STEP=1,LAST=null;
@@ -52,7 +52,7 @@ function list(){var t=N(S.q).split(/\s+/).filter(Boolean),r=ALL.filter(function(
   var h='<div class="crumb">'+(S.dep?(EMO[S.dep]||'')+' <b>'+E(S.dep)+'</b>':'')+(S.q?'Resultados para “'+E(S.q)+'”':'')+' · '+r.length+' productos</div>';
   if(S.dep==='Deportes'){var cs={};ALL.forEach(function(i){if(i.dep==='Deportes')cs[i.cat]=(cs[i.cat]||0)+1});h+='<div class="subs">'+Object.keys(cs).map(function(c){return '<button class="sub'+(S.cat===c?' on':'')+'" data-cat="'+E(c)+'">'+(SEMO[c]||'🏆')+' '+E(c)+'</button>'}).join('')+'</div>'}
   return h+grid(r.slice(0,S.lim))+(r.length>S.lim?'<div class="more"><button data-more>Ver más</button></div>':'')}
-function feed(){var a=ALL.filter(function(i){return i.dep==='Deportes'&&i.img&&i.a&&!/oka/i.test(i.n)}),r=[],x=5;for(var k=0;k<30;k++){x=(x*9301+49297)%233280;var it=a[x%a.length];if(r.indexOf(it)<0)r.push(it)}
+function feed(){var a=ALL.filter(function(i){return i.img&&i.a&&!/oka/i.test(i.n)}),r=[],x=5;for(var k=0;k<30;k++){x=(x*9301+49297)%233280;var it=a[x%a.length];if(r.indexOf(it)<0)r.push(it)}
   return '<div class="feed" id="feed">'+r.map(function(i){return '<section class="fd" data-id="'+i.id+'"><img alt="'+E(i.n)+'" src="'+big(i.img)+'"><div class="fg"></div><div class="side"><button data-like="'+i.id+'" class="'+(LIKES[i.id]?'on':'')+'" aria-label="Me gusta">❤️<small>Me gusta</small></button><button data-share="'+i.id+'" aria-label="Compartir">↗️<small>Compartir</small></button><button data-add="'+i.id+'" aria-label="Agregar al carrito">🛒<small>Agregar</small></button></div><div class="fi"><span class="ftag">'+(SEMO[i.cat]||'🏆')+' '+E(i.cat)+'</span><h3>'+E(i.n)+'</h3>'+badge(i)+'<div class="fp"><b>'+F(i.p)+'</b>'+(i.iva?'<span class="iva">+ IVA</span>':'')+'<button data-open="'+i.id+'">Ver producto</button></div></div></section>'}).join('')+'</div>'}
 function cuenta(){return '<section class="acc"><div class="av">🐂</div><h2>Mi cuenta</h2><p>Vista previa: aún no hay inicio de sesión.</p><div class="kv2"><span>Tus datos de entrega se guardan solo en este teléfono.</span></div><button class="go" data-tab="parati">Seguir comprando</button></section>'}
 var LIKES={};try{LIKES=JSON.parse(localStorage.getItem('tt_likes')||'{}')}catch(e){}
