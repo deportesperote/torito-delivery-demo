@@ -13,7 +13,7 @@ function render(i,d){var sp=i.dep==='Deportes';var sub=i.sub||i.cat||'';
  (i.img?'<div class="pdx-i"><img alt="'+E(i.n)+'" src="'+(window.PD_BIG?window.PD_BIG(i.img):i.img)+'"></div>':'<div class="pdx-i emo" style="--k:'+(COL[i.dep]||'#666')+'">'+(EMO[i.dep]||'🛍️')+'</div>')+
  '<div class="pdx-b"><div class="pdx-p">'+F(i.p)+(i.iva?' <small>+ IVA</small>':'')+'</div><h2>'+E(i.n)+'</h2><div class="pdx-t">'+(i.a?(i.exp?'<span class="ex">⚡ Express 15 min</span>':'<span class="sl">🕒 Entrega en 6 h</span>'):'<span class="ag">Agotado</span>')+(i.x?'<span class="ag">🔞 +18</span>':'')+'</div>'+
  (i.x?'<div class="pdx-18">🔞 Venta exclusiva a mayores de 18 años. Se solicita identificación oficial al entregar.</div>':'')+
- '<table class="pdx-f">'+fact('Marca',d.b)+fact(sp?'Tallas / medidas':'Contenido / presentación',d.z)+fact('Proveedor',d.pv)+fact('Departamento',i.dep)+fact('Categoría',sub!==i.dep?sub:'')+fact('Código',i.k)+'</table>'+
+ '<table class="pdx-f">'+fact('Marca',d.b)+fact(sp?'Tallas / medidas':'Contenido / presentación',d.z)+fact('Departamento',i.dep)+fact('Categoría',sub!==i.dep?sub:'')+fact('Código',i.k)+'</table>'+
  '<div class="pdx-d"><h3>Descripción</h3><p>'+E(d.d||'Cargando descripción…')+'</p></div></div>'+
  '<div class="pdx-a"><div class="pdx-q"><button data-pdx="-1" aria-label="Quitar uno">−</button><b id="pdxQ">'+q+'</b><button data-pdx="+1" aria-label="Agregar uno">+</button></div>'+(i.a?'<button class="pdx-go" data-pdx="add">Agregar · '+F(i.p*q)+'</button>':'<button class="pdx-go" disabled>Agotado</button>')+'</div></div>'}
 function show(id,push){var i=C.BY()[id];if(!i)return;open=id;q=1;render(i,{});el.hidden=false;document.body.style.overflow='hidden';
