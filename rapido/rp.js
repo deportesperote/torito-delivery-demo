@@ -19,7 +19,7 @@ function eta(k){var cur=mxNow(),day=0,f=cur<H_OPEN||cur>=H_CLOSE,dur=ENT[k].m;if
 // catálogo
 var ALL=[],BY={},DEP={};
 (window.PRODUCTS||[]).forEach(function(p){var n=parseInt(p.id.replace(/\D/g,''),10)||0;var it={id:'d'+p.id,n:p.n,p:p.p,iva:!!p.iva,img:p.img?BASE+p.img:'',dep:'Deportes',cat:p.c,k:p.k[0]||'',t:p.t,a:true,x:false,exp:n%2===1};it._q=N(p.n+' '+p.c+' '+p.s+' '+p.k.join(' ')+' deportes');ALL.push(it)});
-function addT(T){T.forEach(function(p){var it={id:'t'+p.id,n:p.t,p:p.p,iva:false,img:p.i?BASE+p.i:'',dep:p.c,cat:p.s||p.c,k:'',t:[],a:p.a,x:p.x,exp:true};it._q=N(p.t+' '+p.c+' '+p.s);ALL.push(it)})}
+function addT(T){T.forEach(function(p){var it={id:'t'+p.id,n:p.t,p:p.p,iva:false,img:p.i?BASE+p.i:'',dep:p.c,cat:p.s||p.c,sub:p.s,k:p.k||'',t:[],a:p.a,x:p.x,exp:true};it._q=N(p.t+' '+p.c+' '+p.s);ALL.push(it)})}
 function index(){BY={};DEP={};ALL.forEach(function(i){BY[i.id]=i;DEP[i.dep]=(DEP[i.dep]||0)+1})}
 function depList(){return Object.keys(DEP).sort(function(a,b){return (b==='Deportes')-(a==='Deportes')||(a==='Otros')-(b==='Otros')||DEP[b]-DEP[a]})}
 // estado
@@ -38,7 +38,7 @@ function tallas(i){return i.t.length>1?i.t:['CH','M','G','XG']}
 // UI
 function pic(i){return i.img?'<div class="pi"><img loading="lazy" alt="" src="'+i.img+'"></div>':'<div class="pi emo" style="--k:'+(COL[i.dep]||'#666')+'">'+(EMO[i.dep]||'🛍️')+'</div>'}
 function ctl(i){var q=qtyOf(i.id);if(!i.a)return '<span class="ago">Agotado</span>';if(q&&!hasT(i))return '<div class="step"><button data-dec="'+i.id+'" aria-label="Quitar uno">−</button><b>'+q+'</b><button data-inc="'+i.id+'" aria-label="Agregar uno">+</button></div>';return '<button class="addb'+(q?' has':'')+'" data-add="'+i.id+'">'+(q?'✓ '+q+' · Agregar otra':'+ Agregar')+'</button>'}
-function card(i){return '<article class="pc" id="c-'+i.id+'">'+pic(i)+(i.x?'<i class="b18">+18</i>':'')+'<div class="pb"><b class="pp">'+F(i.p)+(i.iva?' <small>+ IVA</small>':'')+'</b><h3>'+E(i.n)+'</h3><span class="tg '+(i.exp?'t1':'t2')+'">'+(i.exp?'⚡ 15 min':'🕒 6 h')+'</span>'+ctl(i)+'</div></article>'}
+function card(i){return '<article class="pc" id="c-'+i.id+'" data-open="'+i.id+'">'+pic(i)+(i.x?'<i class="b18">+18</i>':'')+'<div class="pb"><b class="pp">'+F(i.p)+(i.iva?' <small>+ IVA</small>':'')+'</b><h3>'+E(i.n)+'</h3><span class="tg '+(i.exp?'t1':'t2')+'">'+(i.exp?'⚡ 15 min':'🕒 6 h')+'</span>'+ctl(i)+'</div></article>'}
 function refresh(id){var el=document.getElementById('c-'+id);if(el)el.outerHTML=card(BY[id])}
 function grid(a){return '<div class="grid">'+a.map(card).join('')+'</div>'}
 function row(t,a,dep){return '<section class="sec"><div class="sh"><h2>'+t+'</h2>'+(dep?'<button class="lnk" data-dep="'+E(dep)+'">Ver todo ›</button>':'')+'</div><div class="row">'+a.map(card).join('')+'</div></section>'}
@@ -86,7 +86,7 @@ function msg(o){var c=o.cli;return '✅ *Pedido Torito Delivery*\nFolio: *'+o.fo
 function confirmOrder(){var k=entK();var o={folio:folio(),items:L().map(function(c){return Object.assign({},c)}),total:total(),cli:Object.assign({},cli),ent:k,eta:eta(k),adult:adult()};LAST=o;try{localStorage.setItem('rp_last',JSON.stringify(o))}catch(e){}cart=[];edad=false;save();render();
   ov('<div class="co"><div class="cob done"><div class="okc">✓</div><h2>¡Pedido listo!</h2><p>Folio</p><div class="fol">'+o.folio+'</div><p class="eta big2">⏱️ Llega aprox. <b>'+o.eta.txt+'</b></p>'+(o.eta.fuera?'<p class="warn">🌙 Fuera de horario: se procesa a partir de las 7:00 h.</p>':'')+'<p>'+o.items.length+' productos · <b>'+F(o.total)+'</b> · '+ENT[k].l+'</p><a class="big wa" target="_blank" rel="noopener" href="https://wa.me/'+WA+'?text='+encodeURIComponent(msg(o))+'">Enviar confirmación por WhatsApp</a><p class="nt">Número de WhatsApp: EJEMPLO (pendiente)</p><button class="big ghost" data-close>Seguir comprando</button></div></div>',function(){})}
 // eventos
-document.addEventListener('click',function(e){var b=e.target.closest('button,a');if(!b||b.closest('#ov'))return;var d=b.dataset;
+document.addEventListener('click',function(e){var b=e.target.closest('button,a');if(!b){var o=e.target.closest('[data-open]');if(o&&!o.closest('#ov')&&!o.closest('#pdx'))PD_OPEN(o.dataset.open);return}if(b.closest('#ov')||b.closest('#pdx'))return;var d=b.dataset;
   if(d.add){var i=BY[d.add];if(hasT(i))tsheet(d.add);else add(d.add);return}
   if(d.inc){add(d.inc);return}if(d.dec){dec(d.dec);return}
   if(d.dep!=null){$('#q').value='';$('#qx').hidden=true;go({dep:S.dep===d.dep&&S.view==='list'?'':d.dep,cat:'',q:''});return}
@@ -98,6 +98,8 @@ document.addEventListener('click',function(e){var b=e.target.closest('button,a')
   if(b.id==='qx'){$('#q').value='';b.hidden=true;go({q:'',dep:'',cat:''});$('#q').focus()}});
 var qt;$('#q').oninput=function(){var v=this.value;$('#qx').hidden=!v;clearTimeout(qt);qt=setTimeout(function(){go({q:v.trim(),dep:'',cat:''})},150)};
 index();render();
-fetch(BASE+'torito-products.json').then(function(r){return r.json()}).then(function(T){addT(T);ALL.sort(function(a,b){return (b.a?1:0)-(a.a?1:0)||(b.img?1:0)-(a.img?1:0)});index();render()});
+fetch(BASE+'torito-products.json').then(function(r){return r.json()}).then(function(T){addT(T);setTimeout(function(){window.PD_DEEP&&PD_DEEP()},0);ALL.sort(function(a,b){return (b.a?1:0)-(a.a?1:0)||(b.img?1:0)-(a.img?1:0)});index();render()});
 window.RP={go:go,checkout:checkout,add:add,set:function(c,k,l){cart=c;if(k)cli=Object.assign(cli,k);if(l){LAST=l}save();render()}};
+window.PD_BASE='../';window.PD_ADD=function(id,q){if(hasT(BY[id]))tsheet(id);else{add(id,'','',q);toast&&toast('Agregado ✓')}};
+window.PD_CTX={BY:function(){return BY},ALL:function(){return ALL},F:F,E:E,EMO:EMO,COL:COL};
 })();

@@ -19,7 +19,7 @@ var HNOTE='Tiempos de entrega válidos en pedidos dentro del horario de 7:00 a 2
 // ---- catálogo unificado ----
 var ALL=[],BY={},DEP={};
 (window.PRODUCTS||[]).forEach(function(p){var n=parseInt(p.id.replace(/\D/g,''),10)||0;var it={id:'d'+p.id,n:p.n,p:p.p,iva:!!p.iva,img:p.img,dep:'Deportes',cat:p.c,sub:p.s,k:p.k[0]||'',t:p.t,a:true,x:false,exp:n%2===1};it._q=N(p.n+' '+p.c+' '+p.s+' '+p.k.join(' ')+' deportes');ALL.push(it)});
-function addT(T){T.forEach(function(p){var it={id:'t'+p.id,n:p.t,p:p.p,iva:false,img:p.i||'',dep:p.c,cat:p.c,sub:p.s,k:'',t:[],a:p.a,x:p.x,exp:true};it._q=N(p.t+' '+p.c+' '+p.s);ALL.push(it)})}
+function addT(T){T.forEach(function(p){var it={id:'t'+p.id,n:p.t,p:p.p,iva:false,img:p.i||'',dep:p.c,cat:p.c,sub:p.s,k:p.k||'',t:[],a:p.a,x:p.x,exp:true};it._q=N(p.t+' '+p.c+' '+p.s);ALL.push(it)})}
 function index(){BY={};DEP={};ALL.forEach(function(i){BY[i.id]=i;DEP[i.dep]=(DEP[i.dep]||0)+1})}
 // ---- estado ----
 var S={view:'home',dep:'',cat:'',q:'',lim:60},cart=[],cli={nombre:'',tel:'',ent:'',modo:'envio',dir:'',ref:'',pago:'efectivo',edad:false},STEP=1,LAST=null;
@@ -78,7 +78,7 @@ document.addEventListener('click',function(e){var b=e.target.closest('button,a,[
   if(d.add){e.stopPropagation();var it=BY[d.add];if(tallas(it)){detail(d.add);return}var f=cart.filter(function(i){return i.id===d.add})[0];if(f)f.qty++;else cart.push({id:d.add,qty:1,talla:it.t.length===1?it.t[0]:'',nota:''});save();toast('Agregado al carrito ✓');return}
   if(d.like){LIKES[d.like]=!LIKES[d.like];try{localStorage.setItem('tt_likes',JSON.stringify(LIKES))}catch(_){}b.classList.toggle('on',!!LIKES[d.like]);return}
   if(d.share){var it2=BY[d.share],tx=it2.n+' — '+F(it2.p)+' en Torito Delivery';if(navigator.share)navigator.share({title:'Torito Delivery',text:tx}).catch(function(){});else{try{navigator.clipboard.writeText(tx)}catch(_){}toast('Texto copiado para compartir')}return}
-  if(d.open){detail(d.open);return}
+  if(d.open){PD_OPEN(d.open);return}
   if(d.tab){var t=d.tab;$('#q').value='';if(t.indexOf('dep:')===0)go({dep:t.slice(4),cat:'',q:'',view:'list',tab:t});else go({dep:'',cat:'',q:'',view:t==='parati'?'home':t,tab:t});return}
   if(d.nav){if(d.nav==='cart'){if(STEP===4)STEP=1;openC();return}$('#q').value='';go({dep:'',cat:'',q:'',view:d.nav,tab:'parati'});return}
   if(d.dep!=null){$('#q').value='';go({dep:d.dep,cat:'',q:'',view:'list'});return}
@@ -123,6 +123,8 @@ function body(){var b=$('#sb'),h=bar(),t=total(),f='',it=L();
     if(d.m!=null){if(cart[+d.m].qty>1)cart[+d.m].qty--;else cart.splice(+d.m,1)}else if(d.p!=null)cart[+d.p].qty++;else if(d.r!=null)cart.splice(+d.r,1);else return;save();body()}}
 // ---- carga ----
 index();render();
-fetch('torito-products.json').then(function(r){return r.json()}).then(function(T){addT(T);ALL.sort(function(a,b){return (b.a?1:0)-(a.a?1:0)||(b.img?1:0)-(a.img?1:0)});index();cart=cart.filter(function(i){return BY[i.id]});render()});
+fetch('torito-products.json').then(function(r){return r.json()}).then(function(T){addT(T);setTimeout(function(){window.PD_DEEP&&PD_DEEP()},0);ALL.sort(function(a,b){return (b.a?1:0)-(a.a?1:0)||(b.img?1:0)-(a.img?1:0)});index();cart=cart.filter(function(i){return BY[i.id]});render()});
 window.TD={detail:detail,go:go,open:openC,cart:function(){return cart},set:function(c,k){cart=c;if(k)cli=Object.assign(cli,k);save()},all:function(){return ALL},msg:function(){return LAST&&msg(LAST)}};
+window.PD_BASE='';window.PD_BIG=big;window.PD_ADD=function(id,q){var it=BY[id];if(tallas(it)){detail(id);return}var f=cart.filter(function(c){return c.id===id&&!c.talla&&!c.nota})[0];if(f)f.qty+=q;else cart.push({id:id,qty:q,talla:it.t.length===1?it.t[0]:'',nota:''});save();toast('Agregado al carrito ✓')};
+window.PD_CTX={BY:function(){return BY},ALL:function(){return ALL},F:F,E:E,EMO:EMO,COL:COL};
 })();
