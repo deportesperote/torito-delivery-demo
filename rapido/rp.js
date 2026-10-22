@@ -43,7 +43,7 @@ function refresh(id){var el=document.getElementById('c-'+id);if(el)el.outerHTML=
 function grid(a){return '<div class="grid">'+a.map(card).join('')+'</div>'}
 function row(t,a,dep){return '<section class="sec"><div class="sh"><h2>'+t+'</h2>'+(dep?'<button class="lnk" data-dep="'+E(dep)+'">Ver todo ›</button>':'')+'</div><div class="row">'+a.map(card).join('')+'</div></section>'}
 function deps(){$('#deps').innerHTML=depList().map(function(d){return '<button class="dp'+(S.dep===d?' on':'')+'" data-dep="'+E(d)+'"><span style="--k:'+(COL[d]||'#666')+'">'+(EMO[d]||'🛍️')+'</span>'+E(SHORT[d]||d)+'</button>'}).join('')}
-function pick(dep,n,f){return ALL.filter(function(i){return i.dep===dep&&i.a&&(!f||f(i))}).filter(function(_,j){return j%7===0}).slice(0,n)}
+function pick(dep,n,f){var a=ALL.filter(function(i){return i.dep===dep&&i.a&&(!f||f(i))});var w=a.filter(function(i){return i.img});return (w.length>=n?w:a.filter(function(_,j){return j%7===0})).slice(0,n)}
 function home(){var h='';var m=mxNow(),open=m>=H_OPEN&&m<H_CLOSE;
   h+='<div class="hint'+(open?'':' off')+'">'+(open?'🟢 Abierto · Express llega en ~15 min (hasta 3 km)':'🌙 Fuera de horario · tu pedido se procesa a partir de las 7:00 h')+'</div>';
   if(LAST&&LAST.items&&LAST.items.some(function(c){return BY[c.id]})){h+='<section class="again"><div><b>🔁 Volver a pedir</b><small>'+LAST.items.length+' productos · '+F(LAST.total)+' · '+E(LAST.folio)+'</small><p>'+LAST.items.slice(0,3).map(function(c){return BY[c.id]?E(c.qty+'× '+BY[c.id].n):''}).join(' · ')+(LAST.items.length>3?'…':'')+'</p></div><button class="big" data-again>Agregar todo</button></section>'}
