@@ -25,7 +25,7 @@ var SHIP={
   est:{t:'Estándar',d:'6 horas · hasta 8 km',fee:19,zona:'ESTANDAR',entrega:'DOMICILIO'},
   tienda:{t:'Recoger en tienda',d:'Sin costo de envío',fee:0,zona:'',entrega:'TIENDA'}
 };
-var PAGO={efectivo:{t:'Efectivo',code:'EFECTIVO'},transferencia:{t:'Transferencia',code:'TRANSFERENCIA'},tarjeta:{t:'Tarjeta',code:'TARJETA'}};
+var PAGO={enlinea:{t:'Pagar en línea (tarjeta, OXXO o SPEI)',code:'EN_LINEA',metodo:'mercadopago'},efectivo:{t:'Efectivo al entregar',code:'EFECTIVO',metodo:'efectivo'}};
 var H_OPEN=420,H_CLOSE=1320,MSG_MAX=2000;
 var Q=new URLSearchParams(location.search);
 function param(n){return (Q.get(n)||'').replace(/\s+/g,' ').trim()}
@@ -60,7 +60,7 @@ function buildHome(){
   HOME=out;
 }
 var S={dep:'',q:'',lim:24},cart=[],edad=false,LAST_SEND=null;
-var cli={nombre:param('nombre'),tel:TEL_LOCK?telNorm:(param('tel')||''),note:'',pago:'efectivo',ship:ZONA==='fuera'?'tienda':ZONA==='estandar'?'est':'exp'};
+var cli={nombre:param('nombre'),tel:TEL_LOCK?telNorm:(param('tel')||''),note:'',pago:'enlinea',ship:ZONA==='fuera'?'tienda':ZONA==='estandar'?'est':'exp'};
 function L(){return cart.filter(function(c){return BY[c.id]&&c.qty>0})}
 function count(){return L().reduce(function(a,c){return a+c.qty},0)}
 function subCents(){return L().reduce(function(a,c){return a+cents(BY[c.id].p)*c.qty},0)}
@@ -169,7 +169,7 @@ function checkout(){
   h+='<section class="box"><label class="lb" for="nota">Nota (opcional)</label><textarea id="nota" class="note" data-f="note" maxlength="240" placeholder="Referencia, color de portón o indicación para la entrega">'+E(cli.note)+'</textarea></section>';
   if(adult())h+='<section class="box age"><h3>Solo mayores de 18</h3><p>Este pedido incluye bebidas alcohólicas o cigarros. Pediremos identificación al entregar.</p><label class="ck"><input type="checkbox" id="edad"'+(edad?' checked':'')+'> Confirmo que soy mayor de edad</label></section>';
   h+='</div>';
-  h+='<div class="cof"><div class="tot"><div><span>Subtotal</span><b>'+F(sub)+'</b></div><div><span>Envío</span><b>'+F(env)+'</b></div><div class="gt"><span>Total</span><b>'+F(tot)+'</b></div></div>'+(L().some(function(c){return BY[c.id].iva})?'<p class="nt">Algunos artículos de calzado se cobran + IVA.</p>':'')+'<p class="err" id="err" role="alert"></p><p class="sent" id="sent"></p><button type="button" class="big" id="send">Enviar pedido por WhatsApp · '+F(tot)+'</button></div></div>';
+  h+='<div class="cof"><div class="tot"><div><span>Subtotal</span><b>'+F(sub)+'</b></div><div><span>Envío</span><b>'+F(env)+'</b></div><div class="gt"><span>Total</span><b>'+F(tot)+'</b></div></div>'+(L().some(function(c){return BY[c.id].iva})?'<p class="nt">Algunos artículos de calzado se cobran + IVA.</p>':'')+'<p class="err" id="err" role="alert"></p><p class="sent" id="sent"></p><button type="button" class="big" id="send">Enviar pedido por WhatsApp · '+F(tot)+'</button>'+(cli.pago==='enlinea'?'<p class="payhint">Te mandaremos el botón de pago en WhatsApp</p>':'')+'</div></div>';
   ov(h,onCheckout);
   [].forEach.call(document.querySelectorAll('#ov .li'),function(row,ix){var c=it[ix];if(c)fillImg(row,BY[c.id],ix<2)});
   var cob=$('#ov .cob');if(cob)cob.scrollTop=y;
@@ -200,15 +200,18 @@ function itemLine(c){
   var name=san(i.n,40)||'Producto';
   return c.qty+'|'+clave+'|'+name+'|'+money(i.p);
 }
-function asmMsg(head,lines,tail,note){return head.join('\n')+'\n---\n'+lines.join('\n')+'\n---\n'+tail.join('\n')+(note?'\nNOTA: '+note:'')}
+function asmMsg(head,lines,tail,note,machine){return head.join('\n')+'\n---\n'+lines.join('\n')+'\n---\n'+tail.join('\n')+(note?'\nNOTA: '+note:'')+'\n'+machine.join('\n')}
 function buildMsg(o){
-  var head=['PEDIDO #'+o.folio,'CLIENTE: '+san(o.nombre,80),'ZONA: '+o.zona,'ENTREGA: '+o.entrega,'PAGO: '+o.pago,'ORIGEN: '+san(o.origen||'DIRECTO',24)];
+  var pay=PAGO[o.pagoKey]||PAGO.enlinea;
+  var head=['PEDIDO #'+o.folio,'CLIENTE: '+san(o.nombre,80),'ZONA: '+o.zona,'ENTREGA: '+o.entrega,'PAGO: '+(o.pago||pay.code),'ORIGEN: '+san(o.origen||'DIRECTO',24)];
   var rows=o.items.map(function(c){return {line:itemLine(c),cents:cents(BY[c.id].p)*c.qty}});
-  var envC=cents(o.envio),note=o.nota||'';
+  var envC=cents(o.envio),note=o.nota||'',metodo=o.metodo||pay.metodo;
   function pack(list,n){
     var sub=0;list.forEach(function(r){sub+=r.cents});
-    var tail=['SUBTOTAL: '+money(sub/100),'ENVIO: '+money(envC/100),'TOTAL: '+money((sub+envC)/100)];
-    return asmMsg(head,list.map(function(r){return r.line}),tail,n);
+    var totalC=sub+envC;
+    var tail=['SUBTOTAL: '+money(sub/100),'ENVIO: '+money(envC/100),'TOTAL: '+money(totalC/100)];
+    var machine=['TOTAL_CENTAVOS:'+totalC,'PAGO_METODO:'+metodo];
+    return asmMsg(head,list.map(function(r){return r.line}),tail,n,machine);
   }
   var msg=pack(rows,note);
   if(msg.length<=MSG_MAX)return msg;
@@ -216,8 +219,7 @@ function buildMsg(o){
   if(note&&bareLen+prefix.length<MSG_MAX){var room=MSG_MAX-(bareLen+prefix.length);return pack(rows,note.slice(0,Math.max(0,room)).trim())}
   var kept=rows.slice(),dropped=0;
   while(kept.length>1&&pack(kept,dropped?('Faltan '+dropped+' articulos'):'').length>MSG_MAX){kept.pop();dropped++}
-  msg=pack(kept,dropped?('Faltan '+dropped+' articulos'):'');
-  return msg.length<=MSG_MAX?msg:msg.slice(0,MSG_MAX);
+  return pack(kept,dropped?('Faltan '+dropped+' articulos'):'');
 }
 function pad2(n){return ('0'+String(n==null?'':n).replace(/\D/g,'')).slice(-2)}
 function randHex(n){var b=new Uint8Array(n);if(window.crypto&&crypto.getRandomValues)crypto.getRandomValues(b);else for(var i=0;i<n;i++)b[i]=Math.floor(Math.random()*256);var s='';for(var i=0;i<n;i++)s+=('0'+b[i].toString(16)).slice(-2);return s.toUpperCase()}
@@ -234,7 +236,8 @@ function makeOrder(){
   var key=orderKey();
   if(LAST_SEND&&LAST_SEND.key===key)return LAST_SEND.order;
   var k=resolveShip(cli.ship),sub=subCents()/100,env=feeOf(k),tot=grandCents(k)/100;
-  var o={folio:folio(),items:L().map(function(c){return {id:c.id,qty:c.qty,talla:c.talla||'',nota:c.nota||''}}),sub:sub,envio:env,total:tot,nombre:san(cli.nombre,80),zona:zonaLine(k),entrega:k==='tienda'?'TIENDA':'DOMICILIO',pago:(PAGO[cli.pago]||PAGO.efectivo).code,origen:san(ORIGEN||'DIRECTO',24)||'DIRECTO',nota:noteParts(k),key:key};
+  var pay=PAGO[cli.pago]||PAGO.enlinea;
+  var o={folio:folio(),items:L().map(function(c){return {id:c.id,qty:c.qty,talla:c.talla||'',nota:c.nota||''}}),sub:sub,envio:env,total:tot,nombre:san(cli.nombre,80),zona:zonaLine(k),entrega:k==='tienda'?'TIENDA':'DOMICILIO',pago:pay.code,pagoKey:cli.pago,metodo:pay.metodo,origen:san(ORIGEN||'DIRECTO',24)||'DIRECTO',nota:noteParts(k),key:key};
   LAST_SEND={key:key,order:o};
   return o;
 }
