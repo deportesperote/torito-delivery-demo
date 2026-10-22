@@ -123,6 +123,6 @@ function body(){var b=$('#sb'),h=bar(),t=total(),f='',it=L();
     if(d.m!=null){if(cart[+d.m].qty>1)cart[+d.m].qty--;else cart.splice(+d.m,1)}else if(d.p!=null)cart[+d.p].qty++;else if(d.r!=null)cart.splice(+d.r,1);else return;save();body()}}
 // ---- carga ----
 index();render();
-fetch('torito-products.json').then(function(r){return r.json()}).then(function(T){addT(T);ALL.sort(function(a,b){return (b.img?1:0)-(a.img?1:0)});index();cart=cart.filter(function(i){return BY[i.id]});render()});
+fetch('torito-products.json').then(function(r){return r.json()}).then(function(T){addT(T);ALL.sort(function(a,b){return (b.a?1:0)-(a.a?1:0)||(b.img?1:0)-(a.img?1:0)});index();cart=cart.filter(function(i){return BY[i.id]});render()});
 window.TD={detail:detail,go:go,open:openC,cart:function(){return cart},set:function(c,k){cart=c;if(k)cli=Object.assign(cli,k);save()},all:function(){return ALL},msg:function(){return LAST&&msg(LAST)}};
 })();

@@ -98,6 +98,6 @@ document.addEventListener('click',function(e){var b=e.target.closest('button,a')
   if(b.id==='qx'){$('#q').value='';b.hidden=true;go({q:'',dep:'',cat:''});$('#q').focus()}});
 var qt;$('#q').oninput=function(){var v=this.value;$('#qx').hidden=!v;clearTimeout(qt);qt=setTimeout(function(){go({q:v.trim(),dep:'',cat:''})},150)};
 index();render();
-fetch(BASE+'torito-products.json').then(function(r){return r.json()}).then(function(T){addT(T);ALL.sort(function(a,b){return (b.img?1:0)-(a.img?1:0)});index();render()});
+fetch(BASE+'torito-products.json').then(function(r){return r.json()}).then(function(T){addT(T);ALL.sort(function(a,b){return (b.a?1:0)-(a.a?1:0)||(b.img?1:0)-(a.img?1:0)});index();render()});
 window.RP={go:go,checkout:checkout,add:add,set:function(c,k,l){cart=c;if(k)cli=Object.assign(cli,k);if(l){LAST=l}save();render()}};
 })();
