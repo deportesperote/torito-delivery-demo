@@ -11,7 +11,7 @@ function fact(k,v){return v?'<tr><td>'+k+'</td><td>'+E(v)+'</td></tr>':''}
 function render(i,d){var sp=i.dep==='Deportes';var sub=i.sub||i.cat||'';
  el.innerHTML='<div class="pdx-s" role="dialog" aria-modal="true" aria-label="'+E(i.n)+'"><div class="pdx-g"></div><button class="pdx-x" data-pdx="close" aria-label="Cerrar">✕</button>'+
  (i.img?'<div class="pdx-i"><img alt="'+E(i.n)+'" src="'+(window.PD_BIG?window.PD_BIG(i.img):i.img)+'"></div>':'<div class="pdx-i emo" style="--k:'+(COL[i.dep]||'#666')+'">'+(EMO[i.dep]||'🛍️')+'</div>')+
- '<div class="pdx-b"><div class="pdx-p">'+F(i.p)+(i.iva?' <small>+ IVA</small>':'')+'</div><h2>'+E(i.n)+'</h2><div class="pdx-t">'+(i.a?(i.exp?'<span class="ex">⚡ Express 15 min</span>':'<span class="sl">🕒 Entrega en 6 h</span>'):'<span class="ag">Agotado</span>')+(i.x?'<span class="ag">🔞 +18</span>':'')+'</div>'+
+ '<div class="pdx-b"><div class="pdx-p">'+F(i.p)+(i.iva?' <small>+ IVA</small>':'')+'</div><h2>'+E(i.n)+'</h2><div class="pdx-t">'+(window.PD_FUERA?'<span class="sl">Solo tienda</span>':(i.a?(i.exp?'<span class="ex">Express 15 min</span>':'<span class="sl">Entrega en 6 h</span>'):'<span class="ag">Agotado</span>'))+(i.x?'<span class="ag">+18</span>':'')+'</div>'+
  (i.x?'<div class="pdx-18">🔞 Venta exclusiva a mayores de 18 años. Se solicita identificación oficial al entregar.</div>':'')+
  '<table class="pdx-f">'+fact('Marca',d.b)+fact(sp?'Tallas / medidas':'Contenido / presentación',d.z)+fact('Departamento',i.dep)+fact('Categoría',sub!==i.dep?sub:'')+fact('Código',i.k)+'</table>'+
  '<div class="pdx-d"><h3>Descripción</h3><p>'+E(d.d||'Cargando descripción…')+'</p></div></div>'+
