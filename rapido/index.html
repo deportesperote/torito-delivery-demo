@@ -1,15 +1,20 @@
 <!doctype html>
 <html lang="es-MX"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow"><title>Torito Delivery — Pide rápido</title><meta name="theme-color" content="#E30613">
-<link rel="icon" href="../favicon.svg"><link rel="stylesheet" href="rp.css?v=2"></head>
+<link rel="icon" href="../favicon.svg"><link rel="stylesheet" href="rp.css?v=7"></head>
 <body>
+<div class="sticky">
 <div class="demo">🧪 Tienda de ejemplo · precios y ofertas de muestra</div>
-<header class="hd"><div class="top"><a href="#" id="home" class="logo">🐂 Torito <b>Delivery</b></a><span class="loc" id="loc">📍 Perote</span></div>
-<div class="srch"><span>🔍</span><input id="q" type="search" placeholder="¿Qué necesitas? Ej. leche, refresco, balón" autocomplete="off" enterkeyhint="search"><button id="qx" hidden aria-label="Borrar">✕</button></div></header>
-<nav class="deps" id="deps" aria-label="Departamentos"></nav>
+<header class="hd"><div class="top"><a href="#" id="home" class="logo">🐂 Torito <b>Delivery</b></a><span class="loc" id="loc">Perote</span></div>
+<div class="srch"><span aria-hidden="true">🔍</span><input id="q" type="search" placeholder="Busca leche, refresco, balón…" autocomplete="off" autocapitalize="off" autocorrect="off" enterkeyhint="search"><button id="qx" type="button" hidden aria-label="Borrar búsqueda">✕</button></div></header>
+<nav class="deps" id="deps" aria-label="Categorías"></nav>
+<div id="zone" class="zone" hidden></div>
+</div>
 <main id="app"></main>
-<button class="cbar" id="cbar" hidden></button>
+<button class="cbar" id="cbar" type="button" hidden></button>
 <div class="ov" id="ov" hidden></div>
-<div class="toast" id="toast" hidden></div>
-<script src="../products.js?v=1"></script><script src="rp.js?v=2"></script><script src="../pdsheet.js?v=3"></script>
+<div class="toast" id="toast" hidden role="status"></div>
+<div class="boot" id="boot" role="status" aria-live="polite"><div class="spin" aria-hidden="true"></div><b>Torito Delivery</b><p id="bootMsg">Cargando productos…</p><button type="button" id="bootRetry" hidden>Reintentar</button></div>
+<script>window.__CAT=fetch('../torito-products.json');</script>
+<script src="../products.js?v=1"></script><script src="rp.js?v=7"></script><script src="../pdsheet.js?v=5"></script>
 </body></html>

@@ -1,6 +1,6 @@
 /* Torito Delivery — tienda única (súper + deportes). Vista previa. */
 (function(){
-var WA='520000000000'; // EJEMPLO: número de WhatsApp pendiente (placeholder, no real)
+var WA='522821073249';
 var $=function(s){return document.querySelector(s)};
 function E(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function F(n){return '$'+n.toLocaleString('es-MX',{minimumFractionDigits:n%1?2:0,maximumFractionDigits:2})}
@@ -112,7 +112,7 @@ function body(){var b=$('#sb'),h=bar(),t=total(),f='',it=L();
     (adult()?'<div class="age"><b>🔞 Tu pedido incluye bebidas alcohólicas o cigarros.</b><p>Venta exclusiva a mayores de 18 años. Se pedirá identificación oficial al entregar.</p><label class="chk"><input type="checkbox" id="cA"'+(c.edad?' checked':'')+'> Confirmo que soy mayor de edad</label></div>':'')+'</div><p class="err" id="cErr"></p>';
     f='<div class="nav2"><button class="back" data-go="1">← Atrás</button><button class="go" data-go="3">Revisar pedido →</button></div>'}
   else if(STEP===3){h+='<h3 class="sh">📋 Revisa tu pedido</h3>'+etaHtml(eta(k))+sum({items:it,total:t,cli:cli,ent:k,iva:iva()});f='<div class="nav2"><button class="back" data-go="2">← Atrás</button><button class="go ok" data-go="ok">✔ Confirmar pedido</button></div>'}
-  else{h+='<div class="done"><div class="chk2">✓</div><h3>¡Pedido registrado!</h3><p>Tu folio es</p><div class="folio">'+LAST.folio+'</div><p>Envía la confirmación por WhatsApp para que preparemos tu pedido.</p></div>'+etaHtml(LAST.eta)+sum(LAST);f='<a class="wabtn" id="waL" target="_blank" rel="noopener" href="https://wa.me/'+WA+'?text='+encodeURIComponent(msg(LAST))+'">Enviar confirmación por WhatsApp</a><small class="hnote c">Número de WhatsApp: EJEMPLO (pendiente)</small>'}
+  else{h+='<div class="done"><div class="chk2">✓</div><h3>¡Pedido registrado!</h3><p>Tu folio es</p><div class="folio">'+LAST.folio+'</div><p>Envía la confirmación por WhatsApp para que preparemos tu pedido.</p></div>'+etaHtml(LAST.eta)+sum(LAST);f='<a class="wabtn" id="waL" target="_blank" rel="noopener" href="https://wa.me/'+WA+'?text='+encodeURIComponent(msg(LAST))+'">Enviar confirmación por WhatsApp</a>'}
   b.innerHTML=h+'<div class="cfoot">'+f+'</div>';
   [['#cN','nombre'],['#cT','tel'],['#cD','dir'],['#cR','ref']].forEach(function(a){var e=$(a[0]);if(e)e.oninput=function(){cli[a[1]]=this.value;save()}});
   if($('#cA'))$('#cA').onchange=function(){cli.edad=this.checked;save()};
