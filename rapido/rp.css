@@ -23,7 +23,6 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 .deps::-webkit-scrollbar{display:none}
 .chip{flex:0 0 auto;scroll-snap-align:start;min-height:44px;border-radius:999px;border:1.5px solid #e4e4e4;background:#fff;padding:0 14px;font-weight:800;font-size:14.5px;white-space:nowrap}
 .chip.on{background:#111;color:#fff;border-color:#111}
-.chip.xexp.on{background:#0f7a37;border-color:#0f7a37}
 .zone{margin:0 12px 8px;background:#FFF4E5;color:#6A3800;border:1px solid #F0D2A6;border-radius:12px;padding:10px 12px;font-size:14.5px;font-weight:700;line-height:1.35}
 .zone b{display:block;font-size:15.5px;margin-bottom:2px}
 .zone[hidden]{display:none}
