@@ -26,7 +26,8 @@ var SHIP={
   lenta:{t:'Entrega en 6 horas',d:'Tarifa estándar',fee:19,zona:'ESTANDAR',entrega:'DOMICILIO',tiempo:'6H'},
   tienda:{t:'Recoger en tienda',d:'Sin costo de envío',fee:0,zona:'',entrega:'TIENDA',tiempo:''}
 };
-var GRATIS=29900,MINIMO=10000;
+var GRATIS=29900,MINIMO=10000,EFECTIVO_MAX=30000;
+var MSG_EFECTIVO='Por seguridad, pedidos mayores a $300 se pagan en línea (tarjeta, OXXO o SPEI).';
 var PAGO={enlinea:{t:'Pagar en línea (tarjeta, OXXO o SPEI)',code:'EN_LINEA',metodo:'mercadopago'},efectivo:{t:'Efectivo al entregar',code:'EFECTIVO',metodo:'efectivo'}};
 var H_OPEN=420,H_CLOSE=1320,MSG_MAX=2000;
 var Q=new URLSearchParams(location.search);
@@ -90,6 +91,20 @@ function feeOf(k){if(!SHIP[k]||k==='tienda')return 0;if(subCents()>=GRATIS)retur
 function feeTxt(k){if(!k||k==='tienda')return F(0);if(!blocked(k)&&subCents()>=GRATIS)return 'GRATIS';return F(SHIP[k].fee)}
 function tiempoOf(k){if(k==='exp')return '15MIN';if(k==='est')return '1H';if(k==='lenta')return '6H';return hasSlow()?'6H':'15MIN'}
 function grandCents(k){return subCents()+cents(feeOf(k))}
+function cashAllowed(k){return grandCents(k==null?resolveShip(cli.ship):k)<=EFECTIVO_MAX}
+function enforcePay(k){
+  if(cli.pago==='efectivo'&&!cashAllowed(k)){cli.pago='enlinea';return true}
+  return false;
+}
+function pagoForzado(o,packedCents){
+  var pay=PAGO[o.pagoKey]||PAGO.enlinea;
+  var metodo=o.metodo||pay.metodo;
+  var code=o.pago||pay.code;
+  var declared=o.total!=null?cents(o.total):packedCents;
+  if((metodo==='efectivo'||String(code).toUpperCase()==='EFECTIVO')&&(packedCents>EFECTIVO_MAX||declared>EFECTIVO_MAX))
+    return {code:'EN_LINEA',metodo:'mercadopago'};
+  return {code:code,metodo:metodo};
+}
 function zonaLine(k){if(k==='exp')return 'EXPRES';if(k==='tienda'&&!hasSlow()&&ZONA==='expres')return 'EXPRES';return 'ESTANDAR'}
 function shipKeys(){if(ZONA==='fuera')return ['tienda'];if(hasSlow())return ['lenta','exp','est','tienda'];return ['exp','est','tienda']}
 function greet(){var el=$('#loc');if(!el)return;if(cli.nombre){var f=cli.nombre.split(' ')[0];if(f.length>18)f=f.slice(0,18);el.textContent='Hola, '+f}else el.textContent='Perote'}
@@ -185,7 +200,8 @@ function checkout(){
   var it=L();if(!it.length){closeOv();bar();return}
   var toastEl=$('#toast');if(toastEl)toastEl.hidden=true;
   cli.ship=resolveShip(cli.ship);
-  var k=cli.ship,sub=subCents()/100,env=feeOf(k),tot=grandCents(k)/100,e=eta(k==='tienda'?(hasSlow()?'lenta':'exp'):k),free=k!=='tienda'&&subCents()>=GRATIS;
+  var switched=enforcePay(cli.ship);
+  var k=cli.ship,sub=subCents()/100,env=feeOf(k),tot=grandCents(k)/100,e=eta(k==='tienda'?(hasSlow()?'lenta':'exp'):k),free=k!=='tienda'&&subCents()>=GRATIS,cash=cashAllowed(k);
   var y=0,prev=$('#ov .cob');if(prev)y=prev.scrollTop;
   var h='<div class="co"><div class="coh"><button type="button" data-close class="back" aria-label="Cerrar">←</button><h2>Tu pedido</h2></div><div class="cob">';
   if(NAME_LOCK)h+='<p class="who">Pedido de <b>'+E(cli.nombre)+'</b></p>';
@@ -193,7 +209,7 @@ function checkout(){
   h+='<section class="box"><h3>'+count()+' '+(count()===1?'artículo':'artículos')+'</h3>'+it.map(function(c){var i=BY[c.id],ix=cart.indexOf(c);return '<div class="li">'+pic(i)+'<div class="lt"><b>'+E(i.n)+'</b>'+(c.talla?'<small>Talla '+E(c.talla)+(c.nota?' · '+E(c.nota):'')+'</small>':'')+(i.x?'<i class="b18 s">+18</i>':'')+'</div><div class="lr"><b>'+F(cents(i.p)*c.qty/100)+'</b><div class="step sm"><button type="button" data-m="'+ix+'" aria-label="Quitar uno">−</button><b>'+c.qty+'</b><button type="button" data-p="'+ix+'" aria-label="Agregar uno">+</button></div></div></div>'}).join('')+'</section>';
   var low=underMin();
   h+='<section class="box"><h3>Entrega</h3><div class="ships">'+shipKeys().map(function(x){var dis=blocked(x);return '<button type="button" class="ship'+(k===x?' on':'')+'" data-ship="'+x+'"'+(dis?' disabled':'')+' aria-pressed="'+(k===x?'true':'false')+'"><span class="tx"><b>'+SHIP[x].t+'</b><small>'+SHIP[x].d+'</small></span><span class="fee'+(feeTxt(x)==='GRATIS'?' free':'')+'">'+feeTxt(x)+'</span></button>'}).join('')+'</div>'+shipHint()+(k!=='tienda'&&!free&&!low&&subCents()>0?'<p class="shipnudge">'+faltaTxt()+'</p>':'')+(e.afterHours?'<p class="warn">Estamos cerrados. Tu pedido se prepara a partir de las 7:00 h.</p>':(k==='tienda'?'<p class="nt">Lo recogen en la tienda, de 7:00 a 22:00 h.</p>':'<p class="nt">Llega aprox. '+e.txt+'. Horario de 7:00 a 22:00 h.</p>'))+'</section>';
-  h+='<section class="box"><h3>Pago</h3><div class="pays">'+Object.keys(PAGO).map(function(x){return '<button type="button" class="pay'+(cli.pago===x?' on':'')+'" data-pago="'+x+'" aria-pressed="'+(cli.pago===x?'true':'false')+'">'+PAGO[x].t+'</button>'}).join('')+'</div></section>';
+  h+='<section class="box"><h3>Pago</h3><div class="pays">'+Object.keys(PAGO).map(function(x){var dis=x==='efectivo'&&!cash;return '<button type="button" class="pay'+(cli.pago===x&&!dis?' on':'')+'" data-pago="'+x+'"'+(dis?' disabled aria-disabled="true"':'')+' aria-pressed="'+(cli.pago===x&&!dis?'true':'false')+'">'+PAGO[x].t+'</button>'}).join('')+'</div>'+(cash?'':'<p class="paylock" role="status">'+MSG_EFECTIVO+'</p>')+'</section>';
   if(!NAME_LOCK||!TEL_LOCK){
     h+='<section class="box"><h3>Tus datos</h3>';
     if(!NAME_LOCK)h+='<label class="lb" for="cN">Nombre</label><input id="cN" class="in" data-f="nombre" autocomplete="name" maxlength="80" placeholder="Nombre y apellido" value="'+E(cli.nombre)+'">';
@@ -207,6 +223,7 @@ function checkout(){
   ov(h,onCheckout);
   [].forEach.call(document.querySelectorAll('#ov .li'),function(row,ix){var c=it[ix];if(c)fillImg(row,BY[c.id],ix<2)});
   var cob=$('#ov .cob');if(cob)cob.scrollTop=y;
+  if(switched){var lock=$('#ov .paylock');if(lock)lock.scrollIntoView({block:'center'})}
 }
 function validate(){
   cli.ship=resolveShip(cli.ship);
@@ -217,6 +234,7 @@ function validate(){
   if(!telOk())return 'Escribe un celular de 10 dígitos.';
   if(adult()&&!edad)return 'Confirma que eres mayor de edad.';
   if(blocked(cli.ship))return 'Elige una entrega disponible.';
+  if(cli.pago==='efectivo'&&!cashAllowed())return MSG_EFECTIVO;
   return '';
 }
 function telOk(){return TEL_LOCK||normTel(cli.tel).length===10}
@@ -237,15 +255,14 @@ function itemLine(c){
 }
 function asmMsg(head,lines,tail,note,machine){return head.join('\n')+'\n---\n'+lines.join('\n')+'\n---\n'+tail.join('\n')+(note?'\nNOTA: '+note:'')+'\n'+machine.join('\n')}
 function buildMsg(o){
-  var pay=PAGO[o.pagoKey]||PAGO.enlinea;
-  var head=['PEDIDO #'+o.folio,'CLIENTE: '+san(o.nombre,80),'ZONA: '+o.zona,'ENTREGA: '+o.entrega,'ENTREGA_TIEMPO: '+(o.tiempo||tiempoOf(o.entrega==='TIENDA'?'tienda':'est')),'PAGO: '+(o.pago||pay.code),'ORIGEN: '+san(o.origen||'DIRECTO',24)];
   var rows=o.items.map(function(c){return {line:itemLine(c),cents:cents(BY[c.id].p)*c.qty}});
-  var envC=cents(o.envio),note=o.nota||'',metodo=o.metodo||pay.metodo;
+  var envC=cents(o.envio),note=o.nota||'';
   function pack(list,n){
     var sub=0;list.forEach(function(r){sub+=r.cents});
-    var totalC=sub+envC;
+    var totalC=sub+envC,pay=pagoForzado(o,totalC);
+    var head=['PEDIDO #'+o.folio,'CLIENTE: '+san(o.nombre,80),'ZONA: '+o.zona,'ENTREGA: '+o.entrega,'ENTREGA_TIEMPO: '+(o.tiempo||tiempoOf(o.entrega==='TIENDA'?'tienda':'est')),'PAGO: '+pay.code,'ORIGEN: '+san(o.origen||'DIRECTO',24)];
     var tail=['SUBTOTAL: '+money(sub/100),'ENVIO: '+money(envC/100),'TOTAL: '+money(totalC/100)];
-    var machine=['TOTAL_CENTAVOS:'+totalC,'PAGO_METODO:'+metodo];
+    var machine=['TOTAL_CENTAVOS:'+totalC,'PAGO_METODO:'+pay.metodo];
     return asmMsg(head,list.map(function(r){return r.line}),tail,n,machine);
   }
   var msg=pack(rows,note);
@@ -268,10 +285,12 @@ function folio(){
 }
 function orderKey(){return JSON.stringify({items:L().map(function(c){return [c.id,c.qty,c.talla||'',c.nota||'']}),ship:cli.ship,pago:cli.pago,note:san(cli.note,240),nombre:san(cli.nombre,80),tel:TEL_LOCK?telNorm:normTel(cli.tel)})}
 function makeOrder(){
+  var k=resolveShip(cli.ship);
+  enforcePay(k);
   var key=orderKey();
   if(LAST_SEND&&LAST_SEND.key===key)return LAST_SEND.order;
-  var k=resolveShip(cli.ship),sub=subCents()/100,env=feeOf(k),tot=grandCents(k)/100;
-  var pay=PAGO[cli.pago]||PAGO.enlinea;
+  var sub=subCents()/100,env=feeOf(k),tot=grandCents(k)/100;
+  var pay=cashAllowed(k)?(PAGO[cli.pago]||PAGO.enlinea):PAGO.enlinea;
   var o={folio:folio(),items:L().map(function(c){return {id:c.id,qty:c.qty,talla:c.talla||'',nota:c.nota||''}}),sub:sub,envio:env,total:tot,nombre:san(cli.nombre,80),zona:zonaLine(k),entrega:k==='tienda'?'TIENDA':'DOMICILIO',tiempo:tiempoOf(k),pago:pay.code,pagoKey:cli.pago,metodo:pay.metodo,origen:san(ORIGEN||'DIRECTO',24)||'DIRECTO',nota:noteParts(k),key:key};
   LAST_SEND={key:key,order:o};
   return o;
@@ -280,10 +299,11 @@ function openWa(url){location.href=url}
 function onCheckout(e,b){
   var d=b.dataset;
   if(d.ship){if(blocked(d.ship))return;cli.ship=d.ship;LAST_SEND=null;checkout();return}
-  if(d.pago){cli.pago=d.pago;LAST_SEND=null;checkout();return}
+  if(d.pago){if(d.pago==='efectivo'&&!cashAllowed())cli.pago='enlinea';else cli.pago=d.pago;LAST_SEND=null;checkout();return}
   if(d.m!=null){var idm=cart[+d.m]&&cart[+d.m].id;bump(+d.m,-1);if(idm)refresh(idm);checkout();return}
   if(d.p!=null){var idp=cart[+d.p]&&cart[+d.p].id;bump(+d.p,1);if(idp)refresh(idp);checkout();return}
   if(b.id==='send'){
+    if(enforcePay()){LAST_SEND=null;checkout();return}
     var er=validate();
     if(er){var err=$('#err');if(err){err.textContent=er;err.scrollIntoView({block:'center'})}return}
     if(b.disabled)return;
@@ -330,7 +350,7 @@ var retry=$('#bootRetry');if(retry)retry.onclick=function(){retry.hidden=true;va
 index();
 window.RP={
   ready:false,add:add,checkout:checkout,folio:folio,buildMsg:buildMsg,makeOrder:makeOrder,openWa:openWa,
-  quote:function(){var k=resolveShip(cli.ship);return {ship:k,sub:subCents()/100,envio:feeOf(k),total:grandCents(k)/100,zona:zonaLine(k),entrega:k==='tienda'?'TIENDA':'DOMICILIO',tiempo:tiempoOf(k),gratis:k!=='tienda'&&subCents()>=GRATIS,bajoMinimo:underMin()}},
+  quote:function(){var k=resolveShip(cli.ship);return {ship:k,sub:subCents()/100,envio:feeOf(k),total:grandCents(k)/100,zona:zonaLine(k),entrega:k==='tienda'?'TIENDA':'DOMICILIO',tiempo:tiempoOf(k),gratis:k!=='tienda'&&subCents()>=GRATIS,bajoMinimo:underMin(),efectivoPermitido:cashAllowed(k),pago:cli.pago}},
   zone:function(){return ZONA},telLocked:function(){return TEL_LOCK},blocked:blocked,client:function(){return cli}
 };
 window.PD_BASE=BASE;window.PD_FUERA=ZONA==='fuera';
