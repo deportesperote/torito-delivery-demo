@@ -26,7 +26,7 @@ var SHIP={
   lenta:{t:'Entrega en 6 horas',d:'Tarifa estándar',fee:19,zona:'ESTANDAR',entrega:'DOMICILIO',tiempo:'6H'},
   tienda:{t:'Recoger en tienda',d:'Sin costo de envío',fee:0,zona:'',entrega:'TIENDA',tiempo:''}
 };
-var GRATIS=29900,MINIMO=10000,EFECTIVO_MAX=30000;
+var GRATIS=29900,MINIMO=4900,EFECTIVO_MAX=30000;
 var MSG_EFECTIVO='Por seguridad, pedidos mayores a $300 se pagan en línea (tarjeta, OXXO o SPEI).';
 var PAGO={enlinea:{t:'Pagar en línea (tarjeta, OXXO o SPEI)',code:'EN_LINEA',metodo:'mercadopago'},efectivo:{t:'Efectivo al entregar',code:'EFECTIVO',metodo:'efectivo'}};
 var H_OPEN=420,H_CLOSE=1320,MSG_MAX=2000;
@@ -144,7 +144,7 @@ function render(){
 function go(o){if(o.q!=null||o.dep!=null)S.lim=24;Object.assign(S,o);render();window.scrollTo(0,0)}
 function faltaTxt(){var f=GRATIS-subCents();if(f<=0)return '';return 'Te faltan '+F(f/100)+' para envío gratis'}
 function underMin(){return subCents()<MINIMO}
-function minTxt(){var f=MINIMO-subCents();if(f<=0)return '';return 'Compra mínima $100 — te faltan '+F(f/100)}
+function minTxt(){var f=MINIMO-subCents();if(f<=0)return '';return 'Compra mínima '+F(MINIMO/100)+' — te faltan '+F(f/100)}
 function barNudge(){if(!count())return '';if(underMin())return minTxt();if(ZONA==='fuera')return '';if(subCents()>=GRATIS)return 'Envío GRATIS';return faltaTxt()}
 function bar(){
   var n=count(),b=$('#cbar');if(!b)return;b.hidden=!n;document.body.classList.toggle('hasbar',!!n);

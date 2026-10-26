@@ -6,6 +6,10 @@
 // A clave in neither list is Torito Delivery and is express.
 // Do not put purchase costs in these lists.
 //
+// Compra mínima is $49 MXN on the products subtotal only (shipping excluded).
+// Below that, pedido.ok is false and pedido.motivo is "compra_minima".
+// Reply with pedido.razon and do not open Pagos.
+//
 // Efectivo is allowed only when the recalculated total (products + shipping)
 // is $300 MXN or less. Above that, pago efectivo is forced to mercadopago
 // and pedido.motivo is "efectivo_maximo". pedido.ok stays true when the
@@ -16,6 +20,7 @@ var PRICES = {};
 var DEPORTES = {};
 var EXPRESS = {};
 var EFECTIVO_MAX = 30000;
+var COMPRA_MINIMA = 4900;
 
 function esExpress(clave) {
   if (EXPRESS && Object.prototype.hasOwnProperty.call(EXPRESS, clave)) return EXPRESS[clave] === true;
@@ -90,14 +95,14 @@ function parsePedido(text) {
     } else missing.push("ENVIO");
   }
   var totalCents = envioCents == null ? null : subCents + envioCents;
-  var bajoMinimo = missing.length === 0 && subCents < 10000;
-  var faltanMin = bajoMinimo ? 10000 - subCents : 0;
+  var bajoMinimo = missing.length === 0 && subCents < COMPRA_MINIMA;
+  var faltanMin = bajoMinimo ? COMPRA_MINIMA - subCents : 0;
   var pideEfectivo = String(pagoMetodo || "").toLowerCase() === "efectivo" || String(header.PAGO || "").toUpperCase() === "EFECTIVO";
   var sobreEfectivo = !bajoMinimo && totalCents != null && totalCents > EFECTIVO_MAX && pideEfectivo;
   var pagoOut = header.PAGO || "";
   var metodoOut = pagoMetodo;
   var motivo = bajoMinimo ? "compra_minima" : "";
-  var razon = bajoMinimo ? ("Compra mínima $100 — te faltan $" + (faltanMin / 100).toFixed(2)) : "";
+  var razon = bajoMinimo ? ("Compra mínima $" + (COMPRA_MINIMA / 100) + " — te faltan $" + (faltanMin / 100).toFixed(2)) : "";
   if (sobreEfectivo) {
     pagoOut = "EN_LINEA";
     metodoOut = "mercadopago";
