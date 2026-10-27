@@ -1,0 +1,47 @@
+{
+  "_nota": "Banners del catálogo rápido, el carrusel bajo la búsqueda. Cada slide lleva type mas_vendidos u ofertas, y el producto en id (t + código de barras de tienda, o d + id de deportes) o en barcode. Opcionales: image (URL del arte), title, subtitle y badge (por ejemplo Top o -20%). Si omites image, la tarjeta usa la foto y el precio del catálogo. Si el producto no está, ese slide no se muestra. Para publicar, sube el ?v= de rp.css y rp.js en index.html.",
+  "slides": [
+    {
+      "type": "mas_vendidos",
+      "id": "t75007614",
+      "badge": "Top",
+      "title": "Más vendidos",
+      "subtitle": "Coca-Cola 600 ml"
+    },
+    {
+      "type": "ofertas",
+      "id": "t7501020565911",
+      "badge": "-20%",
+      "title": "Oferta",
+      "subtitle": "Lala deslactosada 1 L"
+    },
+    {
+      "type": "mas_vendidos",
+      "id": "t7500810029183",
+      "badge": "Top",
+      "title": "Más vendidos",
+      "subtitle": "Pan Bimbo blanco"
+    },
+    {
+      "type": "ofertas",
+      "barcode": "7501000153107",
+      "badge": "Oferta",
+      "title": "Oferta",
+      "subtitle": "Gansito"
+    },
+    {
+      "type": "mas_vendidos",
+      "id": "t7500478045372",
+      "badge": "Top",
+      "title": "Más vendidos",
+      "subtitle": "Sabritones"
+    },
+    {
+      "type": "ofertas",
+      "id": "t7501020540666",
+      "badge": "-20%",
+      "title": "Oferta",
+      "subtitle": "Nutri Leche 1 L"
+    }
+  ]
+}
