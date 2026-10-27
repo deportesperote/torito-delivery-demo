@@ -42,8 +42,11 @@ body:not(.hasbar) .mxf{padding-bottom:calc(18px + env(safe-area-inset-bottom, 0p
 .pi img{width:100%;height:100%;object-fit:contain}
 .pi.emo{font-size:52px;background:linear-gradient(140deg,color-mix(in srgb,var(--k) 16%,#fff),color-mix(in srgb,var(--k) 34%,#fff))}
 .b18{position:absolute;top:8px;left:8px;background:#111;color:#FFD100;font:900 11px sans-serif;font-style:normal;padding:3px 7px;border-radius:999px}
-.like{position:absolute;top:4px;right:4px;z-index:3;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.94);box-shadow:0 1px 4px rgba(0,0,0,.16);color:#6b6b6b;font-size:26px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center}
+.like{position:absolute;top:4px;right:4px;z-index:3;width:44px;height:44px;border:0;border-radius:50%;background:rgba(255,255,255,.94);box-shadow:0 1px 4px rgba(0,0,0,.16);color:#6b6b6b;padding:0;display:flex;align-items:center;justify-content:center}
+.like svg{width:24px;height:24px;display:block}
+.like svg path{fill:none;stroke:currentColor;stroke-width:2}
 .like.on{color:var(--r)}
+.like.on svg path{fill:currentColor;stroke:none}
 .b18.s{position:static;display:inline-block;margin-top:4px}
 .pb{padding:8px 10px 10px;display:flex;flex-direction:column;gap:4px;flex:1}
 .pp{font-size:20px;font-weight:900;letter-spacing:-.3px}
