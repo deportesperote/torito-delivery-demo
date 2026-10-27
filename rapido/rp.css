@@ -28,6 +28,36 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 .zone{margin:0 12px 8px;background:#FFF4E5;color:#6A3800;border:1px solid #F0D2A6;border-radius:12px;padding:10px 12px;font-size:14.5px;font-weight:700;line-height:1.35}
 .zone b{display:block;font-size:15.5px;margin-bottom:2px}
 .zone[hidden]{display:none}
+.bnr{margin:0}
+.bnr-sc{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-left:12px;padding:8px 12px 2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.bnr-sc::-webkit-scrollbar{display:none}
+.bnr-sc:focus-visible{outline:3px solid #111;outline-offset:2px}
+.bn{position:relative;flex:0 0 86%;scroll-snap-align:start;scroll-snap-stop:always;min-height:132px;border:0;border-radius:18px;overflow:hidden;display:flex;align-items:center;gap:12px;padding:12px 12px 12px 16px;text-align:left;color:#fff;background:linear-gradient(115deg,#E30613 0%,#B0000D 78%);box-shadow:0 6px 16px rgba(227,6,19,.22)}
+.bn.of{background:linear-gradient(115deg,#FFE14A 0%,#FFD100 55%,#F5C400 100%);color:#1a1a1a;box-shadow:0 6px 16px rgba(0,0,0,.08)}
+.bn-ph{flex:0 0 96px;width:96px;height:96px;border-radius:14px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.bn.of .bn-ph{border:1px solid rgba(0,0,0,.06)}
+.bn-ph img{width:100%;height:100%;object-fit:contain}
+.bn-ph.emo{font-size:40px;background:#fff}
+.bn-tx{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;position:relative;z-index:1}
+.bn-k{font-size:12px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}
+.bn.of .bn-k{color:var(--rd)}
+.bn-s{font-size:17px;font-weight:800;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bn-row{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:6px}
+.bn-p{font-size:20px;font-weight:900;letter-spacing:-.3px}
+.bn-p small{font-size:11px;font-weight:800;opacity:.8}
+.bn-badge{font:900 12px/1 "Inter",sans-serif;border-radius:999px;padding:4px 8px;background:#FFD100;color:#1a1a1a}
+.bn.of .bn-badge{background:var(--r);color:#fff}
+.bn.hasimg{color:#fff;background:#7a0010}
+.bn.hasimg .bn-k,.bn.hasimg .bn-s,.bn.hasimg .bn-p{color:#fff}
+.bn.hasimg .bn-badge{background:#FFD100;color:#1a1a1a}
+.bn-bg{position:absolute;inset:0;background-size:cover;background-position:center}
+.bn-scrim{position:absolute;inset:0;background:linear-gradient(90deg,rgba(90,0,8,.88) 0%,rgba(176,0,13,.55) 58%,rgba(0,0,0,.12) 100%)}
+.bnr-dots{display:flex;justify-content:center;gap:0;padding:2px 12px 4px}
+.bnr-dots button{min-width:36px;min-height:32px;border:0;background:transparent;padding:0;display:flex;align-items:center;justify-content:center}
+.bnr-dots button i{width:7px;height:7px;border-radius:99px;background:#ddd;display:block;pointer-events:none}
+.bnr-dots button.on i{width:18px;background:var(--r)}
+@media(min-width:700px){.bn{flex-basis:380px}}
+@media(max-width:380px){.bn{flex-basis:90%;min-height:124px;gap:8px;padding-left:12px}.bn-ph{flex-basis:80px;width:80px;height:80px}.bn-s{font-size:15.5px}.bn-p{font-size:18px}}
 main{padding:4px 0 12px;max-width:1100px;margin:0 auto}
 .mxf{background:var(--soft);border-top:1px solid var(--ln);text-align:center;padding:16px 16px 18px}
 body:not(.hasbar) .mxf{padding-bottom:calc(18px + env(safe-area-inset-bottom, 0px))}
@@ -36,8 +66,10 @@ body:not(.hasbar) .mxf{padding-bottom:calc(18px + env(safe-area-inset-bottom, 0p
 .mxf2{margin:8px 0 0;color:var(--mut);font-size:12.5px;font-weight:500;line-height:1.35}
 .status{margin:8px 14px 4px;color:#333;font-size:14px;font-weight:700}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:8px 12px}
+.grid:has(> .pc.pin){grid-template-columns:minmax(0,420px)}
 @media(min-width:700px){.grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));padding:8px 16px}}
 .pc{position:relative;background:#fff;border:1px solid var(--ln);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;text-align:left}
+.pc.pin{border-color:var(--r);box-shadow:0 0 0 3px var(--r);scroll-margin:12px}
 .pi{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;background:#fafafa}
 .pi img{width:100%;height:100%;object-fit:contain}
 .pi.emo{font-size:52px;background:linear-gradient(140deg,color-mix(in srgb,var(--k) 16%,#fff),color-mix(in srgb,var(--k) 34%,#fff))}
