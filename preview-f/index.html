@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#E30613">
+<title>Torito Delivery — Pide en 15 min</title>
+<link rel="icon" href="../favicon.svg">
+<link rel="stylesheet" href="f.css">
+</head>
+<body>
+<div class="phone">
+<div class="sticky">
+<p class="demo">Vista previa · Opción F · precios de muestra</p>
+<header class="hd">
+<div class="top">
+<a class="logo" href="#inicio" id="home">🐂 Torito <b>Delivery</b></a>
+<span class="loc">Perote</span>
+</div>
+<div class="srch">
+<svg class="mag" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+<input id="q" type="search" placeholder="Busca leche, fruta o balón…" autocomplete="off" autocapitalize="off" autocorrect="off" enterkeyhint="search" aria-label="Buscar productos">
+<button id="qx" type="button" hidden aria-label="Borrar búsqueda">✕</button>
+</div>
+</header>
+</div>
+
+<section class="hero" aria-labelledby="heroTitle">
+<div class="hero-tx">
+<p class="eyebrow">Express en Perote</p>
+<h1 id="heroTitle">Pide en 15 min</h1>
+<p class="hero-sub">Abarrotes, fruta y antojos, a tu puerta.</p>
+<button type="button" class="cta" id="cta">Ver catálogo exprés</button>
+</div>
+<div class="hero-art" aria-hidden="true">
+<svg viewBox="0 0 220 210" xmlns="http://www.w3.org/2000/svg">
+<ellipse cx="118" cy="196" rx="78" ry="10" fill="rgba(0,0,0,.16)"/>
+<circle cx="168" cy="78" r="28" fill="#3DDC78"/>
+<circle cx="150" cy="66" r="20" fill="#86F0A8"/>
+<circle cx="176" cy="62" r="14" fill="#B8F7C8"/>
+<path d="M62 92h112l14 96H48L62 92z" fill="#fff"/>
+<path d="M78 92c2-26 78-26 80 0" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/>
+<path d="M74 108h88" stroke="#F6D5D8" stroke-width="3" stroke-linecap="round"/>
+<rect x="86" y="46" width="40" height="58" rx="5" fill="#fff"/>
+<rect x="86" y="46" width="40" height="16" rx="5" fill="#E30613"/>
+<rect x="86" y="56" width="40" height="6" fill="#E30613"/>
+<rect x="94" y="70" width="24" height="16" rx="2" fill="#FFF1F2"/>
+<circle cx="148" cy="52" r="22" fill="#FF3B30"/>
+<ellipse cx="140" cy="46" rx="5" ry="7" fill="rgba(255,255,255,.4)"/>
+<path d="M148 32c8-12 20-8 18-2" fill="none" stroke="#1B7A32" stroke-width="3" stroke-linecap="round"/>
+<ellipse cx="160" cy="28" rx="8" ry="4" transform="rotate(-30 160 28)" fill="#2EAE4E"/>
+<path d="M156 108c34 6 42 32 22 46-22 6-40-12-46-30 8-8 16-14 24-16z" fill="#FFE14A"/>
+<path d="M168 118c10 8 14 18 8 26" fill="none" stroke="#E6C200" stroke-width="3" stroke-linecap="round"/>
+<circle cx="58" cy="78" r="18" fill="#FF9F1C"/>
+<circle cx="52" cy="72" r="4" fill="rgba(255,255,255,.45)"/>
+</svg>
+</div>
+</section>
+
+<nav class="stories" id="stories" aria-label="Categorías"></nav>
+<main id="productos" tabindex="-1"></main>
+<footer class="mxf">
+<p class="mxf1">🇲🇽 <b>Empresa 100% mexicana</b></p>
+<p class="mxf2">Hecho en Perote, Veracruz · Torito Delivery</p>
+</footer>
+</div>
+
+<button class="cbar" id="cbar" type="button" hidden>
+<span class="cbadge" id="cbadge">0</span>
+<span class="clab">Ver pedido</span>
+<b id="ctot">$0</b>
+</button>
+<div class="ov" id="ov" hidden></div>
+<section class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+<div class="grab" aria-hidden="true"></div>
+<div class="sh">
+<h2 id="sheetTitle">Tu pedido</h2>
+<button type="button" id="x" aria-label="Cerrar">✕</button>
+</div>
+<div class="lines" id="lines"></div>
+<div class="stot">
+<div class="srow"><span>Subtotal</span><b id="sub">$0</b></div>
+<div class="srow grand"><span>Total</span><b id="grand">$0</b></div>
+<p class="eta">Entrega express · alrededor de 15 min</p>
+<button type="button" class="keep" id="keep">Seguir comprando</button>
+</div>
+</section>
+<div class="toast" id="toast" hidden role="status"></div>
+<script src="catalog.js"></script>
+<script src="f.js"></script>
+</body>
+</html>
