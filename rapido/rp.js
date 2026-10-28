@@ -29,11 +29,12 @@ var SHIP={
   lenta:{t:'Entrega en 6 horas',d:'Tarifa estándar',fee:19,zona:'ESTANDAR',entrega:'DOMICILIO',tiempo:'6H'},
   tienda:{t:'Recoger en tienda',d:'Sin costo de envío',fee:0,zona:'',entrega:'TIENDA',tiempo:''}
 };
-/* Círculos de la Opción F. Frutas no tiene producto fresco: muestra jugos y néctares reales. */
+/* Círculos de la Opción C, en este orden. Cada uno agrupa departamentos del catálogo. */
 var CIRCLES=[
   {id:'abarrotes',n:'Abarrotes',emo:'🥫',c:'#E8A317',deps:['Despensa']},
-  {id:'frutas',n:'Frutas',emo:'🍎',c:'#2EAE4E',subs:['Jugos y néctares']},
-  {id:'comida',n:'Comida',emo:'🍽️',c:'#F97316',deps:['Pan y Pastelitos','Lácteos y Huevo','Carnes frías y Salchichonería','Congelados y Helados']},
+  {id:'bebidas',n:'Bebidas',emo:'🥤',c:'#0EA5E9',deps:['Bebidas','Cerveza','Vinos y Licores']},
+  {id:'botanas',n:'Botanas',emo:'🍿',c:'#F59E0B',deps:['Botanas']},
+  {id:'limpieza',n:'Limpieza',emo:'🧽',c:'#14B8A6',deps:['Limpieza del Hogar']},
   {id:'deportes',n:'Deportes',emo:'⚽',c:'#2563EB',deps:['Deportes']},
   {id:'ferreteria',n:'Ferretería',emo:'🔧',c:'#64748B',deps:['Hogar y Ferretería','Papelería']},
   {id:'mascotas',n:'Mascotas',emo:'🐶',c:'#A16207',deps:['Mascotas']},
@@ -222,11 +223,7 @@ function homeHtml(){
   });
   depList().forEach(function(d){
     if(coveredDep(d))return;
-    html+=rail(SHORT[d]||d,take(function(i){
-      if(i.dep!==d||!matchSpd(i))return false;
-      if(d==='Bebidas'&&(i.sub==='Jugos y néctares'||i.cat==='Jugos y néctares'))return false;
-      return true;
-    },12),'<button type="button" data-dep="'+E(d)+'">Ver todo</button>');
+    html+=rail(SHORT[d]||d,take(function(i){return i.dep===d&&matchSpd(i)},12),'<button type="button" data-dep="'+E(d)+'">Ver todo</button>');
   });
   if(!html.replace(statusLine(),''))html+='<div class="empty"><b>No hay productos con este tiempo</b><p>Prueba con Todo para ver el catálogo completo.</p></div>';
   return html;
@@ -239,7 +236,6 @@ function render(){
   else{
     var r=results();
     html='<div class="sec-h"><h2>'+viewTitle()+'</h2><button type="button" data-clear>Ver todo</button></div>';
-    if(S.circle==='frutas'&&!S.q)html+='<p class="hint">Jugos y néctares del catálogo.</p>';
     if(!r.length)html+='<div class="empty"><b>'+emptyTitle()+'</b><p>'+emptyMsg()+'</p><button type="button" data-clear>Ver catálogo</button></div>';
     else{
       html+='<div class="grid">'+r.slice(0,S.lim).map(card).join('')+'</div>';
