@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#E30613">
+<title>Torito Delivery — Simulador de flujo</title>
+<link rel="icon" href="../favicon.svg">
+<link rel="stylesheet" href="flujo.css?v=1">
+</head>
+<body>
+<div class="shell">
+<header class="hd">
+<p class="banner">Simulador · demo, no es un pedido real</p>
+<div class="top">
+<div class="who"><span class="avatar" aria-hidden="true">🐂</span><div><b>Torito Delivery</b><small>Chat de ejemplo</small></div></div>
+<button type="button" id="reset">Reiniciar demo</button>
+</div>
+</header>
+<div class="body">
+<ol class="steps" id="steps" aria-label="Pasos del flujo">
+<li data-step="1">1 Saludo</li>
+<li data-step="2">2 Zona</li>
+<li data-step="3">3 Catálogo</li>
+<li data-step="4">4 Pedido</li>
+<li data-step="5">5 Pago</li>
+<li data-step="6">6 Entrega</li>
+</ol>
+<div class="maincol">
+<div class="log" id="log" aria-live="polite"></div>
+<div class="dock" id="dock" hidden></div>
+</div>
+</div>
+</div>
+<div class="panel" id="panel" hidden>
+<div class="panelbar"><div><b>Catálogo real</b><small>El pedido de la demo se arma en el chat</small></div><button type="button" id="panelx">Cerrar</button></div>
+<iframe id="frame" title="Catálogo Torito Delivery"></iframe>
+</div>
+<div class="pay" id="pay" hidden>
+<div class="paycard" role="dialog" aria-modal="true" aria-labelledby="payTitle">
+<p class="kicker">Simulación · no es un cobro</p>
+<h2 id="payTitle">Pago aprobado</h2>
+<p>Mercado Pago no procesó nada. En esta demo el pago queda como exitoso.</p>
+<p class="folio">PEDIDO #1234</p>
+<p class="paysum" id="paysum"></p>
+<button type="button" id="payok">Seguir el pedido</button>
+</div>
+</div>
+<script src="flujo.js?v=1"></script>
+</body>
+</html>
