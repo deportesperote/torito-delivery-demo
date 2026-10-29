@@ -31,7 +31,7 @@ var SHIP={
   tienda:{t:'Recoger en tienda',d:'Sin costo de envío',fee:0,zona:'',entrega:'TIENDA',tiempo:''}
 };
 /* Pin de la tienda en Perote. Único origen para calcular la distancia. */
-var STORE_ORIGIN={lat:19.5605936,lng:-97.2434922};
+var STORE_ORIGIN={name:'Torito Delivery',lat:19.5605936,lng:-97.2434922};
 /* Círculos de la Opción C, en este orden. Cada uno agrupa departamentos del catálogo. */
 var CIRCLES=[
   {id:'abarrotes',n:'Abarrotes',emo:'🥫',c:'#E8A317',deps:['Despensa']},
@@ -494,6 +494,7 @@ function zoneFromKm(km){
   return {band:'fuera',label:'Fuera de zona de entrega'};
 }
 function kmLabel(km){var n=Math.round(km*10)/10;return n.toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1})+' km'}
+function fromStore(km){return 'a '+kmLabel(km)+' de '+STORE_ORIGIN.name}
 function mapLink(){
   if(addr.lat==null||addr.lng==null)return '';
   function c(n){return (Math.round(n*1e6)/1e6).toFixed(6)}
@@ -535,11 +536,11 @@ function addrError(){
 }
 function zoneHtml(){
   if(addr.km==null)return '<p class="zonepick">Calculamos Exprés o Estándar con tu ubicación.</p>';
-  var b=zoneFromKm(addr.km),d=kmLabel(addr.km);
-  if(b.band==='fuera')return '<p class="zonepick bad">Fuera de zona de entrega · '+d+'</p>';
+  var b=zoneFromKm(addr.km),d=fromStore(addr.km);
+  if(b.band==='fuera')return '<p class="zonepick bad">Fuera de zona de entrega · '+E(d)+'</p>';
   var when=hasSlow()?'entrega en 6 h':(b.band==='expres'?'15 min':'1 h');
   var fee=feeOf(addrShip());
-  return '<p class="zonepick ok">'+b.label+' · '+when+' · '+(fee?'envío '+F(fee):'envío gratis')+' · '+d+'</p>';
+  return '<p class="zonepick ok">'+b.label+' · '+when+' · '+(fee?'envío '+F(fee):'envío gratis')+' · '+E(d)+'</p>';
 }
 function feeLineHtml(){
   var k=addrShip();
@@ -659,7 +660,7 @@ function buildMsg(o){
     if(o.direccion)head.push('DIRECCION: '+san(o.direccion,180));
     if(o.referencias)head.push('REFERENCIAS: '+san(o.referencias,160));
     if(o.mapa)head.push('MAPA: '+san(o.mapa,120));
-    if(o.distancia)head.push('DISTANCIA: '+san(o.distancia,24));
+    if(o.distancia)head.push('DISTANCIA: '+san(o.distancia,80));
     var tail=['SUBTOTAL: '+money(sub/100),'ENVIO: '+money(envC/100),'TOTAL: '+money(totalC/100)];
     var machine=['TOTAL_CENTAVOS:'+totalC,'PAGO_METODO:'+pay.metodo];
     return asmMsg(head,list.map(function(r){return r.line}),tail,n,machine);
@@ -696,7 +697,7 @@ function makeOrder(){
   var nombre=san(NAME_LOCK?param('nombre'):cli.nombre,80);
   var tiempo=hasSlow()?'6H':tiempoOf(k);
   var zona=k==='exp'?'EXPRES':k==='est'?'ESTANDAR':zonaLine(k);
-  var o={folio:folio(),items:L().map(function(c){return {id:c.id,qty:c.qty,talla:c.talla||'',nota:c.nota||''}}),sub:sub,envio:env,total:tot,nombre:nombre,zona:zona,entrega:'DOMICILIO',tiempo:tiempo,pago:pay.code,pagoKey:'enlinea',metodo:pay.metodo,origen:san(ORIGEN||'DIRECTO',24)||'DIRECTO',nota:noteParts(k),direccion:san(addr.calle,120)+(addr.colonia?', '+san(addr.colonia,80):''),referencias:san(addr.refs,160),mapa:mapLink(),distancia:addr.km==null?'':kmLabel(addr.km),key:key};
+  var o={folio:folio(),items:L().map(function(c){return {id:c.id,qty:c.qty,talla:c.talla||'',nota:c.nota||''}}),sub:sub,envio:env,total:tot,nombre:nombre,zona:zona,entrega:'DOMICILIO',tiempo:tiempo,pago:pay.code,pagoKey:'enlinea',metodo:pay.metodo,origen:san(ORIGEN||'DIRECTO',24)||'DIRECTO',nota:noteParts(k),direccion:san(addr.calle,120)+(addr.colonia?', '+san(addr.colonia,80):''),referencias:san(addr.refs,160),mapa:mapLink(),distancia:addr.km==null?'':fromStore(addr.km),key:key};
   LAST_SEND={key:key,order:o};
   return o;
 }
