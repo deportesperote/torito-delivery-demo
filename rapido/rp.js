@@ -30,10 +30,8 @@ var SHIP={
   lenta:{t:'Entrega en 6 horas',d:'Tarifa estándar',fee:19,zona:'ESTANDAR',entrega:'DOMICILIO',tiempo:'6H'},
   tienda:{t:'Recoger en tienda',d:'Sin costo de envío',fee:0,zona:'',entrega:'TIENDA',tiempo:''}
 };
-/* TODO: coordenadas reales de la tienda. Juan las va a sustituir.
-   Este punto es solo un ejemplo en el centro de Perote para medir kilómetros.
-   No es la puerta del local. */
-var STORE_ORIGIN={lat:19.5622,lng:-97.2425};
+/* Pin de la tienda en Perote. Único origen para calcular la distancia. */
+var STORE_ORIGIN={lat:19.5605936,lng:-97.2434922};
 /* Círculos de la Opción C, en este orden. Cada uno agrupa departamentos del catálogo. */
 var CIRCLES=[
   {id:'abarrotes',n:'Abarrotes',emo:'🥫',c:'#E8A317',deps:['Despensa']},
