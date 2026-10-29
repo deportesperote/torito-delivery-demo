@@ -412,6 +412,7 @@ function minTxt(){var f=MINIMO-subCents();if(f<=0)return '';return 'Compra míni
 function barNudge(){
   if(!count())return '';
   if(underMin())return minTxt();
+  if(addr.mode==='confirmar')return 'Zona por confirmar';
   if(addr.km!=null&&addr.km>8)return 'Fuera de zona de entrega';
   if(addr.km!=null){
     var b=zoneFromKm(addr.km),k=b.band==='expres'?'exp':'est',fee=feeOf(k);
@@ -459,7 +460,8 @@ var ovH=null;
 function ov(html,h){var o=$('#ov');o.innerHTML=html;o.hidden=false;document.body.style.overflow='hidden';ovH=h}
 function closeOv(){$('#ov').hidden=true;$('#ov').innerHTML='';document.body.style.overflow='';ovH=null}
 $('#ov').onclick=function(e){if(e.target.id==='ov'){closeOv();return}var b=e.target.closest('button');if(!b)return;if(b.dataset.close!=null){closeOv();return}if(ovH)ovH(e,b)};
-$('#ov').oninput=function(e){var t=e.target;if(t.id==='calle'||t.id==='colonia'||t.id==='refs'){readAddr();saveAddr();LAST_SEND=null;paintAddr();return}if(t.dataset.f){cli[t.dataset.f]=t.value;LAST_SEND=null}if(t.id==='edad'){edad=t.checked;paintAddr()}};
+$('#ov').oninput=function(e){var t=e.target;if(t.id==='calle'||t.id==='colonia'||t.id==='refs'){var before=addr.calle+'|'+addr.colonia;readAddr();if((t.id==='calle'||t.id==='colonia')&&addr.source!=='gps'&&before!==addr.calle+'|'+addr.colonia){addr.km=null;addr.lat=null;addr.lng=null;addr.mode='';addr.source=''}saveAddr();LAST_SEND=null;paintAddr();return}if(t.dataset.f){cli[t.dataset.f]=t.value;LAST_SEND=null}if(t.id==='edad'){edad=t.checked;paintAddr()}};
+$('#ov').addEventListener('change',function(e){if(e.target&&e.target.id==='colonia'&&$('#ov').oninput)$('#ov').oninput(e)});
 var WA_ICO='<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 2.1A9.9 9.9 0 0 0 3.2 16.7L2 22l5.5-1.2A9.9 9.9 0 1 0 12 2.1zm5.6 14.1c-.2.7-1.3 1.2-1.8 1.3-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.3c.2-.2.6-.4 1-.4h.3c.3 0 .4 0 .6.5.2.6.8 1.9.8 2.1.1.1.1.3 0 .5l-.4.5c-.1.2-.3.3-.1.6.2.3.7 1.1 1.5 1.8 1 .9 1.8 1.2 2.1 1.3.3.1.4.1.6-.1.2-.2.7-.8.8-1 .2-.3.3-.2.6-.1.2.1 1.5.7 1.7.8.3.1.4.2.5.3.1.2.1.6-.2 1.3z"/></svg>';
 function etaLabel(k){
   if(k==='tienda')return hasSlow()?'Recoges en tienda. El pedido queda listo en 6 horas.':'Recoges en tienda, sin costo de envío.';
@@ -500,7 +502,8 @@ function mapLink(){
   function c(n){return (Math.round(n*1e6)/1e6).toFixed(6)}
   return 'https://maps.google.com/?q='+c(addr.lat)+','+c(addr.lng);
 }
-var addr={calle:'',colonia:'',refs:'',lat:null,lng:null,km:null,loading:false,geoMsg:''};
+var COLONIAS=['Centro','20 de Noviembre','Amado Nervo','Azteca','Del Bosque','Del Valle','Donaldo Colosio','Echeverría','El Calvario','El Conejo','El Escobilla','El Limón','El Pedregal','Francisco Villa','Guadalupe Victoria','Héroe de Nacozari','Justo Sierra','La Gloria','Landa','Los Molinos','Los Pescados','Niños Héroes','Rancho Nuevo','Sabinal','Sierra de Agua','Tenextepec','Teresa Morales','Veracruz','Vicente Guerrero','Vidal Díaz Muñoz'];
+var addr={calle:'',colonia:'',refs:'',lat:null,lng:null,km:null,mode:'',source:'',tab:'gps',loading:false,geoMsg:'',hold:false};
 function loadAddr(){
   try{
     var j=JSON.parse(localStorage.getItem('rp_addr')||'null');
@@ -510,11 +513,13 @@ function loadAddr(){
     addr.refs=san(j.refs,160);
     if(typeof j.lat==='number'&&typeof j.lng==='number'&&isFinite(j.lat)&&isFinite(j.lng)){
       addr.lat=j.lat;addr.lng=j.lng;addr.km=haversineKm(STORE_ORIGIN,{lat:j.lat,lng:j.lng});
-    }
+      addr.mode='ok';addr.source='gps';
+    }else if(j.mode==='confirmar'&&addr.calle&&addr.colonia)addr.mode='confirmar';
+    if(addr.calle||addr.colonia)addr.tab='write';
   }catch(e){}
 }
 function saveAddr(){
-  try{localStorage.setItem('rp_addr',JSON.stringify({calle:addr.calle,colonia:addr.colonia,refs:addr.refs,lat:addr.lat,lng:addr.lng}))}catch(e){}
+  try{localStorage.setItem('rp_addr',JSON.stringify({calle:addr.calle,colonia:addr.colonia,refs:addr.refs,lat:addr.lat,lng:addr.lng,mode:addr.mode}))}catch(e){}
 }
 function readAddr(){
   var c=$('#calle'),k=$('#colonia'),r=$('#refs');
@@ -528,14 +533,16 @@ function addrShip(){
   return b.band==='expres'?'exp':'est';
 }
 function addrError(){
-  if(addr.km==null)return 'Usa tu ubicación para calcular la zona de entrega.';
-  if(addr.km>8)return 'Fuera de zona de entrega';
+  if(addr.km!=null&&addr.km>8)return 'Fuera de zona de entrega';
   if(!san(addr.calle,120))return 'Escribe la calle y el número.';
-  if(!san(addr.colonia,80))return 'Escribe la colonia.';
+  if(!san(addr.colonia,80))return 'Elige la colonia.';
+  if(addr.mode==='confirmar')return '';
+  if(addr.km==null)return addr.tab==='write'?'Toca Calcular zona para continuar.':'Usa tu ubicación o escribe la dirección.';
   return '';
 }
 function zoneHtml(){
-  if(addr.km==null)return '<p class="zonepick">Calculamos Exprés o Estándar con tu ubicación.</p>';
+  if(addr.mode==='confirmar')return '<p class="zonepick wait">Zona por confirmar. Te decimos en WhatsApp si es Exprés o Estándar.</p>';
+  if(addr.km==null)return '<p class="zonepick">'+(addr.tab==='write'?'Escribe la calle y toca Calcular zona.':'Usa tu ubicación o escribe la dirección.')+'</p>';
   var b=zoneFromKm(addr.km),d=fromStore(addr.km);
   if(b.band==='fuera')return '<p class="zonepick bad">Fuera de zona de entrega · '+E(d)+'</p>';
   var when=hasSlow()?'entrega en 6 h':(b.band==='expres'?'15 min':'1 h');
@@ -543,6 +550,7 @@ function zoneHtml(){
   return '<p class="zonepick ok">'+b.label+' · '+when+' · '+(fee?'envío '+F(fee):'envío gratis')+' · '+E(d)+'</p>';
 }
 function feeLineHtml(){
+  if(addr.mode==='confirmar')return '<div class="subline" id="feeline"><span>Envío</span><b>Por confirmar</b></div>';
   var k=addrShip();
   if(!k)return '<div class="subline" id="feeline"><span>Envío</span><b>—</b></div>';
   var fee=feeOf(k);
@@ -553,21 +561,30 @@ function paintAddr(){
   var g=$('#geoerr');if(g){g.textContent=addr.geoMsg||'';g.hidden=!addr.geoMsg}
   var fee=$('#feeline');if(fee)fee.outerHTML=feeLineHtml();
   var geo=$('#geo');if(geo){geo.disabled=!!addr.loading;geo.textContent=addr.loading?'Buscando ubicación…':'📍 Usar mi ubicación'}
+  var calc=$('#calc');if(calc){calc.disabled=!!addr.loading;calc.textContent=addr.loading?'Buscando…':'Calcular zona'}
   var send=$('#send');if(send)send.disabled=!!validate();
   bar();
+}
+function matchColonia(name){
+  var n=N(name);
+  if(!n)return '';
+  for(var i=0;i<COLONIAS.length;i++)if(N(COLONIAS[i])===n)return COLONIAS[i];
+  return '';
 }
 function applyNominatim(j){
   var a=j&&j.address||{};
   var street=[a.road||a.pedestrian||a.footway||a.residential||'',a.house_number||''].filter(Boolean).join(' ');
   var col=a.suburb||a.neighbourhood||a.quarter||a.city_district||a.village||a.hamlet||'';
+  var matched=matchColonia(col);
   if(street)addr.calle=street;
-  if(col)addr.colonia=col;
+  if(matched)addr.colonia=matched;
+  else if(col)addr.colonia=col;
   if(!street&&!col)addr.geoMsg='Encontramos el punto, pero no la calle. Escríbela tú.';
   else addr.geoMsg='';
 }
 function geoFill(lat,lng){
   addr.lat=lat;addr.lng=lng;addr.km=haversineKm(STORE_ORIGIN,{lat:lat,lng:lng});
-  addr.geoMsg='';
+  addr.mode='ok';addr.source='gps';addr.geoMsg='';
   saveAddr();
   var calle=$('#calle'),col=$('#colonia');
   if(calle)calle.value=addr.calle;
@@ -592,20 +609,63 @@ function useGeo(){
     addr.loading=false;
     geoFill(pos.coords.latitude,pos.coords.longitude);
   },function(){
-    addr.loading=false;
-    addr.geoMsg='No se permitió la ubicación. Escribe la calle y la colonia. Para calcular la zona, actívala y toca el botón otra vez.';
-    paintAddr();
+    addr.loading=false;addr.tab='write';
+    addr.geoMsg='No se permitió la ubicación. Escribe la dirección.';
+    if($('#ov')&&!$('#ov').hidden)checkout();else paintAddr();
   },{enableHighAccuracy:true,timeout:12000,maximumAge:0});
 }
+function markConfirm(){
+  addr.lat=null;addr.lng=null;addr.km=null;addr.mode='confirmar';addr.source='';addr.loading=false;
+  addr.geoMsg=san(addr.colonia,80)?'No ubicamos esa calle. Con la colonia elegida, la zona queda por confirmar.':'No ubicamos esa calle. Elige tu colonia. La zona queda por confirmar.';
+  saveAddr();
+  addr.hold=true;checkout();
+}
+function calcZone(){
+  readAddr();
+  if(!san(addr.calle,120)&&!san(addr.colonia,80)){addr.geoMsg='Escribe la calle o elige la colonia.';addr.mode='';paintAddr();return}
+  addr.loading=true;addr.geoMsg='';paintAddr();
+  var q=[addr.calle,addr.colonia,'Perote','Veracruz','México'].filter(Boolean).join(', ');
+  var url='https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=1&accept-language=es&countrycodes=mx&q='+encodeURIComponent(q);
+  fetch(url,{headers:{Accept:'application/json'}}).then(function(r){if(!r.ok)throw new Error('http');return r.json()}).then(function(rows){
+    var hit=rows&&rows[0];
+    if(!hit||hit.lat==null){markConfirm();return}
+    addr.lat=+hit.lat;addr.lng=+hit.lon;addr.km=haversineKm(STORE_ORIGIN,{lat:addr.lat,lng:addr.lng});
+    addr.mode='ok';addr.source='geo';addr.loading=false;addr.geoMsg='';
+    var a=hit.address||{},matched=matchColonia(a.suburb||a.neighbourhood||a.quarter||a.city_district||addr.colonia);
+    if(matched)addr.colonia=matched;
+    saveAddr();addr.hold=true;checkout();
+  }).catch(function(){markConfirm()});
+}
 loadAddr();
+function coloniaSelect(){
+  var extra=addr.colonia&&COLONIAS.indexOf(addr.colonia)<0?'<option selected>'+E(addr.colonia)+'</option>':'';
+  return '<select id="colonia" class="in"><option value="">Elige tu colonia</option>'+extra+COLONIAS.map(function(c){
+    return '<option'+(c===addr.colonia?' selected':'')+'>'+E(c)+'</option>';
+  }).join('')+'</select>';
+}
+function addrFields(withCalc){
+  return '<label>Calle y número<input id="calle" class="in" maxlength="120" autocomplete="address-line1" value="'+E(addr.calle)+'" placeholder="Ej. Independencia 20"></label><label>Colonia'+coloniaSelect()+'</label><p class="hint">Colonias y localidades de Perote.</p><label>Referencias<input id="refs" class="in" maxlength="160" placeholder="Ej. portón azul, frente al parque" value="'+E(addr.refs)+'"></label>'+(withCalc?'<button type="button" class="calc" id="calc"'+(addr.loading?' disabled':'')+'>'+(addr.loading?'Buscando…':'Calcular zona')+'</button>':'');
+}
 function addrBlock(){
-  return '<section class="box addr"><h3>Dirección de entrega</h3><button type="button" class="geo" id="geo"'+(addr.loading?' disabled':'')+'>'+(addr.loading?'Buscando ubicación…':'📍 Usar mi ubicación')+'</button><p class="geoerr" id="geoerr"'+(addr.geoMsg?'':' hidden')+'>'+E(addr.geoMsg)+'</p><label>Calle y número<input id="calle" class="in" maxlength="120" autocomplete="address-line1" value="'+E(addr.calle)+'"></label><label>Colonia<input id="colonia" class="in" maxlength="80" autocomplete="address-level3" value="'+E(addr.colonia)+'"></label><label>Referencias<input id="refs" class="in" maxlength="160" placeholder="Ej. portón azul, frente al parque" value="'+E(addr.refs)+'"></label><div id="zonepick">'+zoneHtml()+'</div></section>';
+  var gps=addr.tab!=='write';
+  var h='<section class="box addr"><h3>Dirección de entrega</h3><div class="tabs" role="tablist"><button type="button" class="tab'+(gps?' on':'')+'" data-tab="gps" role="tab" aria-selected="'+(gps?'true':'false')+'">📍 Usar mi ubicación</button><button type="button" class="tab'+(!gps?' on':'')+'" data-tab="write" role="tab" aria-selected="'+(!gps?'true':'false')+'">✍️ Escribir dirección</button></div>';
+  if(gps){
+    h+='<button type="button" class="geo" id="geo"'+(addr.loading?' disabled':'')+'>'+(addr.loading?'Buscando ubicación…':'📍 Usar mi ubicación')+'</button>';
+    h+='<p class="geoerr" id="geoerr"'+(addr.geoMsg?'':' hidden')+'>'+E(addr.geoMsg)+'</p>';
+    if(addr.calle||addr.colonia||addr.mode)h+=addrFields(false);
+  }else{
+    h+=addrFields(true);
+    h+='<p class="geoerr" id="geoerr"'+(addr.geoMsg?'':' hidden')+'>'+E(addr.geoMsg)+'</p>';
+  }
+  return h+'<div id="zonepick">'+zoneHtml()+'</div></section>';
 }
 function checkout(){
-  readAddr();
+  if(!addr.hold)readAddr();
+  addr.hold=false;
   var it=L();if(!it.length){closeOv();bar();return}
   var toastEl=$('#toast');if(toastEl)toastEl.hidden=true;
-  cli.ship=resolveShip(cli.ship);
+  var ship=addrShip();
+  if(ship)cli.ship=ship;else cli.ship=resolveShip(cli.ship);
   cli.pago='enlinea';
   var k=cli.ship,sub=subCents()/100,low=underMin();
   var e=eta(k==='tienda'?(hasSlow()?'lenta':'exp'):k);
@@ -613,7 +673,8 @@ function checkout(){
   var h='<div class="co"><div class="cobrand"><span class="logo">🐂 Torito <b>Delivery</b></span></div><div class="coh"><button type="button" data-close class="back" aria-label="Cerrar">←</button><h2>Tu pedido</h2></div><div class="cob">';
   if(ZONA==='fuera')h+='<div class="zone"><b>Fuera de cobertura</b>No hay entrega a domicilio. El pedido queda para recoger en tienda.</div>';
   if(e.afterHours)h+='<p class="warn">Estamos cerrados. Tu pedido se prepara a partir de las 7:00 h.</p>';
-  h+='<p class="eta">'+etaLabel(k)+'</p>';
+  var etaTxt=addr.mode==='confirmar'?'La zona de entrega se confirma en WhatsApp.':(addr.km!=null&&addr.km>8?'Fuera de zona de entrega.':etaLabel(k));
+  h+='<p class="eta">'+etaTxt+'</p>';
   h+=addrBlock();
   h+='<section class="box lines">'+it.map(liRow).join('')+'</section>';
   if(adult())h+='<section class="box age"><h3>Solo mayores de 18</h3><p>Este pedido incluye bebidas alcohólicas o cigarros. Pediremos identificación al entregar.</p><label class="ck"><input type="checkbox" id="edad"'+(edad?' checked':'')+'> Confirmo que soy mayor de edad</label></section>';
@@ -686,17 +747,18 @@ function folio(){
 function orderKey(){return JSON.stringify({items:L().map(function(c){return [c.id,c.qty,c.talla||'',c.nota||'']}),ship:cli.ship,pago:cli.pago,note:san(cli.note,240),nombre:san(NAME_LOCK?param('nombre'):cli.nombre,80),tel:TEL_LOCK?telNorm:normTel(cli.tel),calle:san(addr.calle,120),colonia:san(addr.colonia,80),refs:san(addr.refs,160),lat:addr.lat,lng:addr.lng})}
 function makeOrder(){
   readAddr();
+  var confirmar=addr.mode==='confirmar';
   var ship=addrShip();
-  var k=ship||resolveShip(cli.ship);
+  var k=confirmar?'est':(ship||resolveShip(cli.ship));
   cli.ship=k;
   cli.pago='enlinea';
   var key=orderKey();
   if(LAST_SEND&&LAST_SEND.key===key)return LAST_SEND.order;
-  var sub=subCents()/100,env=feeOf(k),tot=grandCents(k)/100;
+  var sub=subCents()/100,env=confirmar?0:feeOf(k),tot=sub+(confirmar?0:feeOf(k));
   var pay=PAGO.enlinea;
   var nombre=san(NAME_LOCK?param('nombre'):cli.nombre,80);
-  var tiempo=hasSlow()?'6H':tiempoOf(k);
-  var zona=k==='exp'?'EXPRES':k==='est'?'ESTANDAR':zonaLine(k);
+  var tiempo=confirmar?'POR_CONFIRMAR':(hasSlow()?'6H':tiempoOf(k));
+  var zona=confirmar?'por confirmar':(k==='exp'?'EXPRES':k==='est'?'ESTANDAR':zonaLine(k));
   var o={folio:folio(),items:L().map(function(c){return {id:c.id,qty:c.qty,talla:c.talla||'',nota:c.nota||''}}),sub:sub,envio:env,total:tot,nombre:nombre,zona:zona,entrega:'DOMICILIO',tiempo:tiempo,pago:pay.code,pagoKey:'enlinea',metodo:pay.metodo,origen:san(ORIGEN||'DIRECTO',24)||'DIRECTO',nota:noteParts(k),direccion:san(addr.calle,120)+(addr.colonia?', '+san(addr.colonia,80):''),referencias:san(addr.refs,160),mapa:mapLink(),distancia:addr.km==null?'':fromStore(addr.km),key:key};
   LAST_SEND={key:key,order:o};
   return o;
@@ -705,6 +767,8 @@ function openWa(url){location.href=url}
 function onCheckout(e,b){
   var d=b.dataset;
   if(b.id==='geo'){useGeo();return}
+  if(b.id==='calc'){calcZone();return}
+  if(d.tab){readAddr();addr.tab=d.tab;checkout();return}
   if(d.m!=null){readAddr();var idm=cart[+d.m]&&cart[+d.m].id;bump(+d.m,-1);if(idm)refresh(idm);checkout();return}
   if(d.p!=null){readAddr();var idp=cart[+d.p]&&cart[+d.p].id;bump(+d.p,1);if(idp)refresh(idp);checkout();return}
   if(b.id==='send'){
