@@ -138,6 +138,15 @@ body.tallbar .toast{bottom:118px}
 .co .box{border:1px solid var(--ln)}
 .co .box.lines{border:0;background:transparent;padding:0;margin:0}
 .box h3{margin:0 0 10px;font-size:17px}
+.addr label{display:block;font-weight:800;font-size:13px;margin-top:10px}
+.addr .in{margin-top:4px}
+.geo{width:100%;border:0;background:#111;color:#fff;border-radius:12px;min-height:44px;font-weight:800}
+.geo:disabled{opacity:.6}
+.geoerr{margin:8px 0 0;color:#9f1239;font-size:13.5px;font-weight:700}
+.geoerr[hidden]{display:none}
+.zonepick{margin:10px 0 0;font-weight:800;font-size:14.5px;line-height:1.35}
+.zonepick.ok{color:#166534}
+.zonepick.bad{color:#9f1239}
 .who{margin:0 0 8px;font-size:15.5px}
 .li{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--ln)}
 .li:first-of-type{border-top:0}
