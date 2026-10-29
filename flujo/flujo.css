@@ -53,6 +53,11 @@ button:focus-visible,a:focus-visible{outline:3px solid #111;outline-offset:2px}
 .stepper button{width:32px;height:36px;border:0;background:transparent;color:var(--r);font-size:20px;font-weight:700}
 .stepper b{min-width:16px;text-align:center;font-size:14px}
 .note{margin:8px 0 0;color:var(--mut);font-size:12.5px;font-weight:650}
+.bank{margin:8px 0;background:#f8fafc;border:1px dashed #94a3b8;border-radius:12px;padding:10px 12px;font-weight:800;line-height:1.45}
+.bank small{display:block;color:#9a3412;font-size:12px;font-weight:800;margin-bottom:4px}
+.cashbox{display:flex;gap:8px;margin-top:8px}
+.cashbox input{flex:1;min-width:0;border:1.5px solid #e4e4e4;border-radius:12px;min-height:44px;padding:0 12px;font:inherit;font-weight:700}
+.cashbox button{border:0;background:var(--r);color:#fff;border-radius:12px;min-height:44px;padding:0 12px;font-weight:800}
 .ticket b{font-size:16px}
 .ticket ul{margin:8px 0;padding:0;list-style:none}
 .ticket li{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;padding:3px 0}

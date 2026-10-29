@@ -34,7 +34,7 @@ var MENU=[
 var BY={};
 GOODS.concat(MENU).forEach(function(p){BY[p.id]=p});
 var S,timers=[];
-function blank(){return {step:1,path:'',zone:null,cart:{},paid:false,mode:'',posting:false}}
+function blank(){return {step:1,path:'',zone:null,cart:{},paid:false,mode:'',posting:false,payLabel:''}}
 function later(fn,ms){var t=setTimeout(fn,reduce()?Math.min(ms,160):ms);timers.push(t)}
 function clearTimers(){timers.forEach(clearTimeout);timers=[]}
 function setStep(n){
@@ -55,6 +55,19 @@ function subtotal(){return lines().reduce(function(a,l){return a+l.item.p*l.qty}
 function shipFee(sub){if(!S.zone)return 0;if(sub>=FREE)return 0;return S.zone.z==='expres'?29:19}
 function count(){return lines().reduce(function(a,l){return a+l.qty},0)}
 function zoneName(){return S.zone?(S.zone.z==='expres'?'Exprés':'Estándar')+' · '+S.zone.n:''}
+function totalNow(){var sub=subtotal();return Math.round((sub+shipFee(sub))*100)/100}
+function rememberPay(label){
+  S.payLabel=label;
+  var sums=document.querySelectorAll('.ticket .sums');
+  var last=sums[sums.length-1];
+  if(!last)return;
+  var html='<div data-payline><span>Pago</span><span>'+E(label)+'</span></div>';
+  var row=last.querySelector('[data-payline]');
+  if(row){row.outerHTML=html;return}
+  var total=last.querySelector('.total');
+  if(total)total.insertAdjacentHTML('beforebegin',html);
+  else last.insertAdjacentHTML('beforeend',html);
+}
 function paintDock(){
   var d=$('#dock');
   if(S.paid||!count()){d.hidden=true;d.innerHTML='';return}
@@ -170,7 +183,13 @@ function showPedido(){
       botSay('<p>Te faltan '+money(MIN-sub)+' para el mínimo de '+money(MIN)+'. Sigue agregando y toca Ver pedido otra vez.</p>');
       return;
     }
-    botSay('<p>Así quedaría el mensaje del pedido. ¿Lo mandamos a pagar? No se cobra nada.</p>'+choicesHtml([{id:'pagar',n:'Pagar con Mercado Pago'}]));
+    setStep(5);
+    botSay('<p>¿Cómo quieres pagar? Son 4 formas y ninguna cobra de verdad.</p>'+choicesHtml([
+      {id:'pay:mp',n:'Mercado Pago'},
+      {id:'pay:tarjeta',n:'Tarjeta de crédito o débito'},
+      {id:'pay:transfer',n:'Transferencia'},
+      {id:'pay:efectivo',n:'Efectivo'}
+    ]));
   },reduce()?200:900);
 }
 function openFrame(){
@@ -181,23 +200,93 @@ function openFrame(){
   $('#panel').hidden=false;
 }
 function closeFrame(){$('#panel').hidden=true}
-function pay(){
-  if(S.paid||subtotal()<MIN)return;
+function choosePay(kind){
+  if(S.paid||S.posting||subtotal()<MIN)return;
   lockChoices();
-  userSay('Pagar con Mercado Pago');
   setStep(5);
-  var sub=subtotal();
-  $('#paysum').textContent='Total '+money(sub+shipFee(sub))+' · '+zoneName();
-  $('#pay').hidden=false;
+  if(kind==='mp'){
+    userSay('Mercado Pago');
+    rememberPay('Mercado Pago');
+    $('#paysum').textContent='Total '+money(totalNow())+' · '+zoneName();
+    $('#pay').hidden=false;
+    return;
+  }
+  if(kind==='tarjeta'){
+    userSay('Tarjeta de crédito o débito');
+    rememberPay('Tarjeta al entregar');
+    finishPay('El repartidor lleva una terminal y cobra la tarjeta al entregar. En esta demo no se pasa ninguna tarjeta.');
+    return;
+  }
+  if(kind==='transfer'){
+    userSay('Transferencia');
+    rememberPay('Transferencia');
+    botSay('<p class="bank"><small>Datos de ejemplo</small>Banco de ejemplo<br>Beneficiario: Torito Delivery Demo<br>CLABE de ejemplo 000 000 0000 0000 00<br>Concepto: PEDIDO 1234</p><p class="note">No son una cuenta real. No los uses en un banco.</p>'+choicesHtml([{id:'transferi',n:'Ya transferí'}]));
+    return;
+  }
+  if(kind==='efectivo'){
+    userSay('Efectivo');
+    botSay('<p>¿Con cuánto vas a pagar? El total es '+money(totalNow())+'.</p>'+cashChoices());
+  }
 }
-function afterPay(){
+function cashChoices(){
+  var due=totalNow();
+  return choicesHtml([
+    {id:'cash:exacto',n:'Exacto · '+money(due)},
+    {id:'cash:200',n:'$200'},
+    {id:'cash:500',n:'$500'},
+    {id:'cash:otro',n:'Otro'}
+  ]);
+}
+function payCash(tender,label){
+  if(S.paid)return;
+  var due=totalNow();
+  lockChoices();
+  userSay(label);
+  if(tender+0.001<due){
+    botSay('<p>Con '+money(tender)+' no alcanza. El total es '+money(due)+'.</p>'+cashChoices());
+    return;
+  }
+  var back=Math.round((tender-due)*100)/100;
+  rememberPay(back<=0?'Efectivo · exacto':'Efectivo · '+money(tender));
+  var msg=back<=0
+    ?'Pagas exacto '+money(due)+'. El repartidor no lleva cambio.'
+    :'Pagas con '+money(tender)+'. El repartidor te lleva '+money(back)+' de cambio.';
+  finishPay(msg+' En esta demo no hay efectivo de por medio.');
+}
+function askOtro(){
+  if(S.paid)return;
+  lockChoices();
+  userSay('Otro');
+  botSay('<p>Escribe con cuánto vas a pagar.</p><div class="cashbox"><input id="cashIn" inputmode="decimal" type="text" placeholder="Ej. 150" aria-label="Monto en efectivo"><button type="button" data-act="cash-ok">Confirmar monto</button></div>');
+}
+function cashOk(){
+  var input=$('#cashIn');
+  var raw=String(input?input.value:'').replace(',','.').replace(/[^0-9.]/g,'');
+  var n=parseFloat(raw);
+  if(!(n>0)){botSay('<p>Escribe un monto, por ejemplo 150.</p>');return}
+  var btn=document.querySelector('[data-act="cash-ok"]');
+  if(btn)btn.disabled=true;
+  payCash(n,money(n));
+}
+function didTransfer(){
+  if(S.paid)return;
+  lockChoices();
+  userSay('Ya transferí');
+  finishPay('Pago verificado. Es una simulación: nadie revisó un depósito.');
+}
+function finishPay(msg){
   $('#pay').hidden=true;
   if(S.paid)return;
   S.paid=true;
   paintDock();
   [].forEach.call(document.querySelectorAll('.row button'),function(b){b.disabled=true});
-  botSay('<p>Pago de demostración aprobado. PEDIDO #1234 sigue en este chat.</p>',300);
-  later(runTimeline,reduce()?180:800);
+  setStep(5);
+  botSay('<p>'+msg+'</p>',280);
+  later(runTimeline,reduce()?180:860);
+}
+function afterPay(){
+  if(S.paid){$('#pay').hidden=true;return}
+  finishPay('Pago de demostración aprobado. El link de Mercado Pago era de ejemplo y no cobró.');
 }
 function etaLine(){
   var food=S.mode==='comida'||lines().some(function(l){return l.item.id.charAt(0)==='t'});
@@ -212,7 +301,7 @@ function status(title,text){
 function runTimeline(){
   setStep(6);
   var steps=[
-    [700,status('Confirmado','PEDIDO #1234 quedó confirmado. Sigue siendo una demo.')],
+    [700,status('Confirmado','PEDIDO #1234 quedó confirmado'+(S.payLabel?' · '+S.payLabel:'')+'. Sigue siendo una demo.')],
     [1300,status('Preparando',S.mode==='comida'?'Castor Tacos está armando el pedido, 10–15 min.':'Estamos juntando los productos.')],
     [1400,status('En camino',etaLine())],
     [1400,status('Entregado','Listo, Juan. Gracias. Aquí terminó la simulación.')]
@@ -234,6 +323,7 @@ function help(){
   botSay('<p>Puedo responder dudas de la demo. Nada de esto habla con una persona real.</p>'+choicesHtml([
     {id:'faq-horas',n:'Horarios'},
     {id:'faq-zonas',n:'Zonas y envío'},
+    {id:'faq-pago',n:'Formas de pago'},
     {id:'faq-humano',n:'Hablar con una persona'}
   ]));
 }
@@ -241,14 +331,16 @@ function faq(id){
   var answers={
     'faq-horas':'Abrimos de 7:00 a 22:00 h, hora de Perote.',
     'faq-zonas':'Exprés: hasta 3 km, envío $29, unos 15 min. Estándar: hasta 8 km, envío $19, alrededor de 1 h. Envío gratis desde $299. Pedido mínimo $49. Las colonias de esta pantalla son de ejemplo.',
+    'faq-pago':'Aceptamos 4 formas: Mercado Pago, tarjeta de crédito o débito en la terminal del repartidor, transferencia y efectivo. En esta demo ninguna cobra de verdad.',
     'faq-humano':'En esta demo no hay una persona del otro lado. En el chat real, el equipo de Torito sigue la conversación.'
   };
-  var labels={'faq-horas':'Horarios','faq-zonas':'Zonas y envío','faq-humano':'Hablar con una persona'};
+  var labels={'faq-horas':'Horarios','faq-zonas':'Zonas y envío','faq-pago':'Formas de pago','faq-humano':'Hablar con una persona'};
   lockChoices();
   userSay(labels[id]);
   botSay('<p>'+answers[id]+'</p><p>¿Qué quieres hacer ahora?</p>'+choicesHtml([
     {id:'faq-horas',n:'Horarios'},
     {id:'faq-zonas',n:'Zonas y envío'},
+    {id:'faq-pago',n:'Formas de pago'},
     {id:'faq-humano',n:'Hablar con una persona'},
     {id:'comprar',n:'Comprar ahora'},
     {id:'comida',n:'Pedir comida'}
@@ -297,7 +389,16 @@ document.addEventListener('click',function(e){
   if(act.indexOf('zona:')===0){onZone(act.slice(5));return}
   if(act==='iframe'){openFrame();return}
   if(act==='pedido'){showPedido();return}
-  if(act==='pagar'){pay();return}
+  if(act.indexOf('pay:')===0){choosePay(act.slice(4));return}
+  if(act==='transferi'){didTransfer();return}
+  if(act.indexOf('cash:')===0){
+    var kind=act.slice(5);
+    if(kind==='otro'){askOtro();return}
+    if(kind==='exacto'){payCash(totalNow(),'Exacto');return}
+    payCash(+kind,money(+kind));
+    return;
+  }
+  if(act==='cash-ok'){cashOk();return}
   if(act.indexOf('faq-')===0){faq(act);return}
 });
 S=blank();
