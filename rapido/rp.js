@@ -30,6 +30,10 @@ var SHIP={
   lenta:{t:'Entrega en 6 horas',d:'Tarifa estándar',fee:19,zona:'ESTANDAR',entrega:'DOMICILIO',tiempo:'6H'},
   tienda:{t:'Recoger en tienda',d:'Sin costo de envío',fee:0,zona:'',entrega:'TIENDA',tiempo:''}
 };
+/* TODO: coordenadas reales de la tienda. Juan las va a sustituir.
+   Este punto es solo un ejemplo en el centro de Perote para medir kilómetros.
+   No es la puerta del local. */
+var STORE_ORIGIN={lat:19.5622,lng:-97.2425};
 /* Círculos de la Opción C, en este orden. Cada uno agrupa departamentos del catálogo. */
 var CIRCLES=[
   {id:'abarrotes',n:'Abarrotes',emo:'🥫',c:'#E8A317',deps:['Despensa']},
@@ -407,7 +411,18 @@ function go(o,opt){
 function faltaTxt(){var f=GRATIS-subCents();if(f<=0)return '';return 'Te faltan '+F(f/100)+' para envío gratis'}
 function underMin(){return subCents()<MINIMO}
 function minTxt(){var f=MINIMO-subCents();if(f<=0)return '';return 'Compra mínima '+F(MINIMO/100)+' — te faltan '+F(f/100)}
-function barNudge(){if(!count())return '';if(underMin())return minTxt();if(ZONA==='fuera')return '';if(subCents()>=GRATIS)return 'Envío GRATIS';return faltaTxt()}
+function barNudge(){
+  if(!count())return '';
+  if(underMin())return minTxt();
+  if(addr.km!=null&&addr.km>8)return 'Fuera de zona de entrega';
+  if(addr.km!=null){
+    var b=zoneFromKm(addr.km),k=b.band==='expres'?'exp':'est',fee=feeOf(k);
+    return b.label+' · '+(fee?'envío '+F(fee):'envío gratis');
+  }
+  if(ZONA==='fuera')return '';
+  if(subCents()>=GRATIS)return 'Envío GRATIS';
+  return faltaTxt();
+}
 function bar(){
   var n=count(),b=$('#cbar');if(!b)return;
   var was=b.hidden;
@@ -446,7 +461,7 @@ var ovH=null;
 function ov(html,h){var o=$('#ov');o.innerHTML=html;o.hidden=false;document.body.style.overflow='hidden';ovH=h}
 function closeOv(){$('#ov').hidden=true;$('#ov').innerHTML='';document.body.style.overflow='';ovH=null}
 $('#ov').onclick=function(e){if(e.target.id==='ov'){closeOv();return}var b=e.target.closest('button');if(!b)return;if(b.dataset.close!=null){closeOv();return}if(ovH)ovH(e,b)};
-$('#ov').oninput=function(e){var t=e.target;if(t.dataset.f){cli[t.dataset.f]=t.value;LAST_SEND=null}if(t.id==='edad')edad=t.checked};
+$('#ov').oninput=function(e){var t=e.target;if(t.id==='calle'||t.id==='colonia'||t.id==='refs'){readAddr();saveAddr();LAST_SEND=null;paintAddr();return}if(t.dataset.f){cli[t.dataset.f]=t.value;LAST_SEND=null}if(t.id==='edad'){edad=t.checked;paintAddr()}};
 var WA_ICO='<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 2.1A9.9 9.9 0 0 0 3.2 16.7L2 22l5.5-1.2A9.9 9.9 0 1 0 12 2.1zm5.6 14.1c-.2.7-1.3 1.2-1.8 1.3-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.3c.2-.2.6-.4 1-.4h.3c.3 0 .4 0 .6.5.2.6.8 1.9.8 2.1.1.1.1.3 0 .5l-.4.5c-.1.2-.3.3-.1.6.2.3.7 1.1 1.5 1.8 1 .9 1.8 1.2 2.1 1.3.3.1.4.1.6-.1.2-.2.7-.8.8-1 .2-.3.3-.2.6-.1.2.1 1.5.7 1.7.8.3.1.4.2.5.3.1.2.1.6-.2 1.3z"/></svg>';
 function etaLabel(k){
   if(k==='tienda')return hasSlow()?'Recoges en tienda. El pedido queda listo en 6 horas.':'Recoges en tienda, sin costo de envío.';
@@ -469,7 +484,126 @@ function liRow(c){
   if(c.talla)meta='<small>Talla '+E(c.talla)+(c.nota?' · '+E(c.nota):'')+'</small>';
   return '<div class="li">'+pic(i)+'<div class="lt"><b>'+E(i.n)+'</b><span class="lp">'+F(cents(i.p)*c.qty/100)+'</span>'+meta+(i.x?'<i class="b18 s">+18</i>':'')+'</div><div class="step sm" role="group" aria-label="Cantidad"><button type="button" data-m="'+ix+'" aria-label="Quitar uno">−</button><b>'+c.qty+'</b><button type="button" data-p="'+ix+'" aria-label="Agregar uno">+</button></div></div>';
 }
+function haversineKm(a,b){
+  var R=6371,p=Math.PI/180,dLat=(b.lat-a.lat)*p,dLng=(b.lng-a.lng)*p;
+  var s=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(a.lat*p)*Math.cos(b.lat*p)*Math.sin(dLng/2)*Math.sin(dLng/2);
+  return 2*R*Math.asin(Math.min(1,Math.sqrt(s)));
+}
+function zoneFromKm(km){
+  if(km==null||isNaN(km))return null;
+  if(km<=3)return {band:'expres',label:'Exprés'};
+  if(km<=8)return {band:'estandar',label:'Estándar'};
+  return {band:'fuera',label:'Fuera de zona de entrega'};
+}
+function kmLabel(km){var n=Math.round(km*10)/10;return n.toLocaleString('es-MX',{minimumFractionDigits:1,maximumFractionDigits:1})+' km'}
+function mapLink(){
+  if(addr.lat==null||addr.lng==null)return '';
+  function c(n){return (Math.round(n*1e6)/1e6).toFixed(6)}
+  return 'https://maps.google.com/?q='+c(addr.lat)+','+c(addr.lng);
+}
+var addr={calle:'',colonia:'',refs:'',lat:null,lng:null,km:null,loading:false,geoMsg:''};
+function loadAddr(){
+  try{
+    var j=JSON.parse(localStorage.getItem('rp_addr')||'null');
+    if(!j||typeof j!=='object')return;
+    addr.calle=san(j.calle,120);
+    addr.colonia=san(j.colonia,80);
+    addr.refs=san(j.refs,160);
+    if(typeof j.lat==='number'&&typeof j.lng==='number'&&isFinite(j.lat)&&isFinite(j.lng)){
+      addr.lat=j.lat;addr.lng=j.lng;addr.km=haversineKm(STORE_ORIGIN,{lat:j.lat,lng:j.lng});
+    }
+  }catch(e){}
+}
+function saveAddr(){
+  try{localStorage.setItem('rp_addr',JSON.stringify({calle:addr.calle,colonia:addr.colonia,refs:addr.refs,lat:addr.lat,lng:addr.lng}))}catch(e){}
+}
+function readAddr(){
+  var c=$('#calle'),k=$('#colonia'),r=$('#refs');
+  if(c)addr.calle=c.value;
+  if(k)addr.colonia=k.value;
+  if(r)addr.refs=r.value;
+}
+function addrShip(){
+  var b=zoneFromKm(addr.km);
+  if(!b||b.band==='fuera')return '';
+  return b.band==='expres'?'exp':'est';
+}
+function addrError(){
+  if(addr.km==null)return 'Usa tu ubicación para calcular la zona de entrega.';
+  if(addr.km>8)return 'Fuera de zona de entrega';
+  if(!san(addr.calle,120))return 'Escribe la calle y el número.';
+  if(!san(addr.colonia,80))return 'Escribe la colonia.';
+  return '';
+}
+function zoneHtml(){
+  if(addr.km==null)return '<p class="zonepick">Calculamos Exprés o Estándar con tu ubicación.</p>';
+  var b=zoneFromKm(addr.km),d=kmLabel(addr.km);
+  if(b.band==='fuera')return '<p class="zonepick bad">Fuera de zona de entrega · '+d+'</p>';
+  var when=hasSlow()?'entrega en 6 h':(b.band==='expres'?'15 min':'1 h');
+  var fee=feeOf(addrShip());
+  return '<p class="zonepick ok">'+b.label+' · '+when+' · '+(fee?'envío '+F(fee):'envío gratis')+' · '+d+'</p>';
+}
+function feeLineHtml(){
+  var k=addrShip();
+  if(!k)return '<div class="subline" id="feeline"><span>Envío</span><b>—</b></div>';
+  var fee=feeOf(k);
+  return '<div class="subline" id="feeline"><span>Envío</span><b>'+(fee?F(fee):'GRATIS')+'</b></div>';
+}
+function paintAddr(){
+  var z=$('#zonepick');if(z)z.innerHTML=zoneHtml();
+  var g=$('#geoerr');if(g){g.textContent=addr.geoMsg||'';g.hidden=!addr.geoMsg}
+  var fee=$('#feeline');if(fee)fee.outerHTML=feeLineHtml();
+  var geo=$('#geo');if(geo){geo.disabled=!!addr.loading;geo.textContent=addr.loading?'Buscando ubicación…':'📍 Usar mi ubicación'}
+  var send=$('#send');if(send)send.disabled=!!validate();
+  bar();
+}
+function applyNominatim(j){
+  var a=j&&j.address||{};
+  var street=[a.road||a.pedestrian||a.footway||a.residential||'',a.house_number||''].filter(Boolean).join(' ');
+  var col=a.suburb||a.neighbourhood||a.quarter||a.city_district||a.village||a.hamlet||'';
+  if(street)addr.calle=street;
+  if(col)addr.colonia=col;
+  if(!street&&!col)addr.geoMsg='Encontramos el punto, pero no la calle. Escríbela tú.';
+  else addr.geoMsg='';
+}
+function geoFill(lat,lng){
+  addr.lat=lat;addr.lng=lng;addr.km=haversineKm(STORE_ORIGIN,{lat:lat,lng:lng});
+  addr.geoMsg='';
+  saveAddr();
+  var calle=$('#calle'),col=$('#colonia');
+  if(calle)calle.value=addr.calle;
+  if(col)col.value=addr.colonia;
+  paintAddr();
+  var url='https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&accept-language=es&lat='+encodeURIComponent(lat)+'&lon='+encodeURIComponent(lng);
+  fetch(url,{headers:{Accept:'application/json'}}).then(function(r){if(!r.ok)throw new Error('http');return r.json()}).then(function(j){
+    applyNominatim(j);saveAddr();
+    var c=$('#calle'),k=$('#colonia');
+    if(c&&document.activeElement!==c)c.value=addr.calle;
+    if(k&&document.activeElement!==k)k.value=addr.colonia;
+    paintAddr();
+  }).catch(function(){
+    addr.geoMsg='Encontramos el punto, pero no la calle. Escríbela tú.';
+    paintAddr();
+  });
+}
+function useGeo(){
+  if(!navigator.geolocation){addr.geoMsg='Este navegador no comparte la ubicación. Escribe la calle y la colonia.';paintAddr();return}
+  addr.loading=true;addr.geoMsg='';paintAddr();
+  navigator.geolocation.getCurrentPosition(function(pos){
+    addr.loading=false;
+    geoFill(pos.coords.latitude,pos.coords.longitude);
+  },function(){
+    addr.loading=false;
+    addr.geoMsg='No se permitió la ubicación. Escribe la calle y la colonia. Para calcular la zona, actívala y toca el botón otra vez.';
+    paintAddr();
+  },{enableHighAccuracy:true,timeout:12000,maximumAge:0});
+}
+loadAddr();
+function addrBlock(){
+  return '<section class="box addr"><h3>Dirección de entrega</h3><button type="button" class="geo" id="geo"'+(addr.loading?' disabled':'')+'>'+(addr.loading?'Buscando ubicación…':'📍 Usar mi ubicación')+'</button><p class="geoerr" id="geoerr"'+(addr.geoMsg?'':' hidden')+'>'+E(addr.geoMsg)+'</p><label>Calle y número<input id="calle" class="in" maxlength="120" autocomplete="address-line1" value="'+E(addr.calle)+'"></label><label>Colonia<input id="colonia" class="in" maxlength="80" autocomplete="address-level3" value="'+E(addr.colonia)+'"></label><label>Referencias<input id="refs" class="in" maxlength="160" placeholder="Ej. portón azul, frente al parque" value="'+E(addr.refs)+'"></label><div id="zonepick">'+zoneHtml()+'</div></section>';
+}
 function checkout(){
+  readAddr();
   var it=L();if(!it.length){closeOv();bar();return}
   var toastEl=$('#toast');if(toastEl)toastEl.hidden=true;
   cli.ship=resolveShip(cli.ship);
@@ -481,20 +615,23 @@ function checkout(){
   if(ZONA==='fuera')h+='<div class="zone"><b>Fuera de cobertura</b>No hay entrega a domicilio. El pedido queda para recoger en tienda.</div>';
   if(e.afterHours)h+='<p class="warn">Estamos cerrados. Tu pedido se prepara a partir de las 7:00 h.</p>';
   h+='<p class="eta">'+etaLabel(k)+'</p>';
+  h+=addrBlock();
   h+='<section class="box lines">'+it.map(liRow).join('')+'</section>';
   if(adult())h+='<section class="box age"><h3>Solo mayores de 18</h3><p>Este pedido incluye bebidas alcohólicas o cigarros. Pediremos identificación al entregar.</p><label class="ck"><input type="checkbox" id="edad"'+(edad?' checked':'')+'> Confirmo que soy mayor de edad</label></section>';
   if(L().some(function(c){return BY[c.id].iva}))h+='<p class="nt">Algunos artículos de calzado se cobran + IVA.</p>';
   h+='</div>';
-  h+='<div class="cof"><div class="subline"><span>Subtotal</span><b>'+F(sub)+'</b></div>'+(low?'<p class="minban">'+minTxt()+'</p>':'')+shipNudgeHtml(k)+'<p class="err" id="err" role="alert"></p><p class="sent" id="sent"></p><button type="button" class="big" id="send"'+(low?' disabled':'')+'><span>Enviar a WhatsApp</span>'+WA_ICO+'</button><p class="payhint">Después te pedimos dirección y pago en el chat</p></div></div>';
+  h+='<div class="cof"><div class="subline"><span>Subtotal</span><b>'+F(sub)+'</b></div>'+feeLineHtml()+(low?'<p class="minban">'+minTxt()+'</p>':'')+shipNudgeHtml(k)+'<p class="err" id="err" role="alert"></p><p class="sent" id="sent"></p><button type="button" class="big" id="send"'+(validate()?' disabled':'')+'><span>Enviar a WhatsApp</span>'+WA_ICO+'</button><p class="payhint">Después seguimos con el pago en el chat</p></div></div>';
   ov(h,onCheckout);
   [].forEach.call(document.querySelectorAll('#ov .li'),function(row,ix){var c=it[ix];if(c)fillImg(row,BY[c.id],ix<2)});
   var cob=$('#ov .cob');if(cob)cob.scrollTop=y;
 }
 function validate(){
-  cli.ship=resolveShip(cli.ship);
+  var ship=addrShip();
+  if(ship)cli.ship=ship;
   cli.pago='enlinea';
   if(!L().length)return 'Agrega un producto para continuar.';
   if(underMin())return minTxt();
+  var ae=addrError();if(ae)return ae;
   if(adult()&&!edad)return 'Confirma que eres mayor de edad.';
   return '';
 }
@@ -521,6 +658,10 @@ function buildMsg(o){
     var sub=0;list.forEach(function(r){sub+=r.cents});
     var totalC=sub+envC,pay=pagoForzado(o,totalC);
     var head=['PEDIDO #'+o.folio,'CLIENTE: '+san(o.nombre,80),'ZONA: '+o.zona,'ENTREGA: '+o.entrega,'ENTREGA_TIEMPO: '+(o.tiempo||tiempoOf(o.entrega==='TIENDA'?'tienda':'est')),'PAGO: '+pay.code,'ORIGEN: '+san(o.origen||'DIRECTO',24)];
+    if(o.direccion)head.push('DIRECCION: '+san(o.direccion,180));
+    if(o.referencias)head.push('REFERENCIAS: '+san(o.referencias,160));
+    if(o.mapa)head.push('MAPA: '+san(o.mapa,120));
+    if(o.distancia)head.push('DISTANCIA: '+san(o.distancia,24));
     var tail=['SUBTOTAL: '+money(sub/100),'ENVIO: '+money(envC/100),'TOTAL: '+money(totalC/100)];
     var machine=['TOTAL_CENTAVOS:'+totalC,'PAGO_METODO:'+pay.metodo];
     return asmMsg(head,list.map(function(r){return r.line}),tail,n,machine);
@@ -543,9 +684,11 @@ function folio(){
   }catch(err){}
   return 'TD-'+Date.now().toString(36).toUpperCase()+'-'+randHex(4);
 }
-function orderKey(){return JSON.stringify({items:L().map(function(c){return [c.id,c.qty,c.talla||'',c.nota||'']}),ship:cli.ship,pago:cli.pago,note:san(cli.note,240),nombre:san(NAME_LOCK?param('nombre'):cli.nombre,80),tel:TEL_LOCK?telNorm:normTel(cli.tel)})}
+function orderKey(){return JSON.stringify({items:L().map(function(c){return [c.id,c.qty,c.talla||'',c.nota||'']}),ship:cli.ship,pago:cli.pago,note:san(cli.note,240),nombre:san(NAME_LOCK?param('nombre'):cli.nombre,80),tel:TEL_LOCK?telNorm:normTel(cli.tel),calle:san(addr.calle,120),colonia:san(addr.colonia,80),refs:san(addr.refs,160),lat:addr.lat,lng:addr.lng})}
 function makeOrder(){
-  var k=resolveShip(cli.ship);
+  readAddr();
+  var ship=addrShip();
+  var k=ship||resolveShip(cli.ship);
   cli.ship=k;
   cli.pago='enlinea';
   var key=orderKey();
@@ -553,16 +696,20 @@ function makeOrder(){
   var sub=subCents()/100,env=feeOf(k),tot=grandCents(k)/100;
   var pay=PAGO.enlinea;
   var nombre=san(NAME_LOCK?param('nombre'):cli.nombre,80);
-  var o={folio:folio(),items:L().map(function(c){return {id:c.id,qty:c.qty,talla:c.talla||'',nota:c.nota||''}}),sub:sub,envio:env,total:tot,nombre:nombre,zona:zonaLine(k),entrega:k==='tienda'?'TIENDA':'DOMICILIO',tiempo:tiempoOf(k),pago:pay.code,pagoKey:'enlinea',metodo:pay.metodo,origen:san(ORIGEN||'DIRECTO',24)||'DIRECTO',nota:noteParts(k),key:key};
+  var tiempo=hasSlow()?'6H':tiempoOf(k);
+  var zona=k==='exp'?'EXPRES':k==='est'?'ESTANDAR':zonaLine(k);
+  var o={folio:folio(),items:L().map(function(c){return {id:c.id,qty:c.qty,talla:c.talla||'',nota:c.nota||''}}),sub:sub,envio:env,total:tot,nombre:nombre,zona:zona,entrega:'DOMICILIO',tiempo:tiempo,pago:pay.code,pagoKey:'enlinea',metodo:pay.metodo,origen:san(ORIGEN||'DIRECTO',24)||'DIRECTO',nota:noteParts(k),direccion:san(addr.calle,120)+(addr.colonia?', '+san(addr.colonia,80):''),referencias:san(addr.refs,160),mapa:mapLink(),distancia:addr.km==null?'':kmLabel(addr.km),key:key};
   LAST_SEND={key:key,order:o};
   return o;
 }
 function openWa(url){location.href=url}
 function onCheckout(e,b){
   var d=b.dataset;
-  if(d.m!=null){var idm=cart[+d.m]&&cart[+d.m].id;bump(+d.m,-1);if(idm)refresh(idm);checkout();return}
-  if(d.p!=null){var idp=cart[+d.p]&&cart[+d.p].id;bump(+d.p,1);if(idp)refresh(idp);checkout();return}
+  if(b.id==='geo'){useGeo();return}
+  if(d.m!=null){readAddr();var idm=cart[+d.m]&&cart[+d.m].id;bump(+d.m,-1);if(idm)refresh(idm);checkout();return}
+  if(d.p!=null){readAddr();var idp=cart[+d.p]&&cart[+d.p].id;bump(+d.p,1);if(idp)refresh(idp);checkout();return}
   if(b.id==='send'){
+    readAddr();
     var er=validate();
     if(er){var err=$('#err');if(err){err.textContent=er;err.scrollIntoView({block:'center'})}return}
     if(b.disabled)return;
@@ -655,7 +802,8 @@ index();
 window.RP={
   ready:false,add:add,checkout:checkout,folio:folio,buildMsg:buildMsg,makeOrder:makeOrder,openWa:openWa,
   quote:function(){var k=resolveShip(cli.ship);return {ship:k,sub:subCents()/100,envio:feeOf(k),total:grandCents(k)/100,zona:zonaLine(k),entrega:k==='tienda'?'TIENDA':'DOMICILIO',tiempo:tiempoOf(k),gratis:k!=='tienda'&&subCents()>=GRATIS,bajoMinimo:underMin(),efectivoPermitido:cashAllowed(k),pago:cli.pago}},
-  zone:function(){return ZONA},telLocked:function(){return TEL_LOCK},blocked:blocked,client:function(){return cli}
+  zone:function(){return ZONA},telLocked:function(){return TEL_LOCK},blocked:blocked,client:function(){return cli},
+  storeOrigin:STORE_ORIGIN,haversineKm:haversineKm,zoneFromKm:zoneFromKm
 };
 window.PD_BASE=BASE;window.PD_FUERA=ZONA==='fuera';
 window.PD_ADD=function(id,q){if(!BY[id])return;if(hasT(BY[id]))tsheet(id,q);else add(id,'','',q)};
