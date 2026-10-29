@@ -147,6 +147,13 @@ body.tallbar .toast{bottom:118px}
 .zonepick{margin:10px 0 0;font-weight:800;font-size:14.5px;line-height:1.35}
 .zonepick.ok{color:#166534}
 .zonepick.bad{color:#9f1239}
+.zonepick.wait{color:#9a3412;background:#fff7ed;border-radius:12px;padding:8px 10px}
+.tabs{display:flex;gap:6px;margin:0 0 12px}
+.tab{flex:1;min-height:44px;border:1.5px solid #e4e4e4;background:#fff;border-radius:12px;font-weight:800;font-size:13px;padding:6px 8px;line-height:1.2}
+.tab.on{background:#111;color:#fff;border-color:#111}
+.calc{width:100%;margin-top:12px;border:0;background:var(--r);color:#fff;border-radius:12px;min-height:48px;font-weight:800}
+.calc:disabled{opacity:.55}
+.addr .hint{margin:6px 0 0;color:var(--mut);font-size:12.5px;font-weight:650}
 .who{margin:0 0 8px;font-size:15.5px}
 .li{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--ln)}
 .li:first-of-type{border-top:0}
